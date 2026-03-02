@@ -48,7 +48,7 @@ export function DataGrid(): React.ReactElement {
                 setSelectedRows(new Set(rows.map((r) => r._index)));
               }
             }}
-            className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-[3px] border border-elevated bg-raised transition-all checked:border-cyan-glow checked:bg-cyan-glow"
+            className="genomic-checkbox"
           />
         ),
         cell: ({ row }) => (
@@ -56,7 +56,7 @@ export function DataGrid(): React.ReactElement {
             type="checkbox"
             checked={selectedRowIndices.has(row.original._index)}
             onChange={() => toggleRow(row.original._index)}
-            className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-[3px] border border-elevated bg-transparent transition-all checked:border-cyan-glow checked:bg-cyan-glow"
+            className="genomic-checkbox"
           />
         ),
         size: 38,

@@ -42,7 +42,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 ### DataGrid
 - TanStack Table + TanStack Virtual, ROW_HEIGHT = 30px
 - Header: `.bg-deep`, mono uppercase column names, cyan sort indicators
-- Custom checkboxes: appearance-none with cyan-glow checked state
+- Custom checkboxes: `.genomic-checkbox` class (index.css) — visible border, hover highlight, cyan-glow checked state with ✓ tick mark via `::after`
 - Row hover: `bg-surface/60`, selected: `bg-cyan-glow/[0.06]` with cyan border
 - Cell color-coding: chromosomes = electric blue, coordinates = tabular-nums, gc_content = nt-g amber
 - Status bar: `.glass-strong`, row count, selection count with cyan dot, "Right-click for operations" hint

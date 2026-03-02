@@ -163,6 +163,43 @@ body {
   border: 1px solid rgba(6, 214, 160, 0.12);
 }
 
+/* ── Custom checkbox ── */
+.genomic-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  border: 1.5px solid var(--color-text-muted);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.genomic-checkbox:hover {
+  border-color: var(--color-text-secondary);
+  background: rgba(6, 214, 160, 0.05);
+}
+
+.genomic-checkbox:checked {
+  border-color: var(--color-cyan-glow);
+  background: var(--color-cyan-glow);
+}
+
+.genomic-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 4.5px;
+  height: 8px;
+  border: solid var(--color-void);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 /* ── Noise texture overlay ── */
 .noise::after {
   content: "";
