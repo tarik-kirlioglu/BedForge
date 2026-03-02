@@ -11,6 +11,7 @@ import { runSort } from "../../operations/sort-rows";
 import { runRemoveDuplicates } from "../../operations/remove-duplicates";
 import { runMergeRegions } from "../../operations/merge-regions";
 import { runExtendRegions } from "../../operations/extend-regions";
+import { runAnnotateGenes } from "../../operations/annotate-genes";
 import { SlopDialog } from "../operations/SlopDialog";
 
 interface ContextMenuState {
@@ -92,6 +93,13 @@ export function GenomicContextMenu(): React.ReactElement | null {
     close();
     if (!assembly) return;
     runGCContent(selectedRows, assembly, useChrPrefix, isBed);
+  }
+
+  function handleAnnotateGenes(): void {
+    close();
+    if (!assembly) return;
+    const targets = selectedRows.length > 0 ? selectedRows : rows;
+    runAnnotateGenes(targets, assembly, isBed);
   }
 
   function handleSort(): void {
@@ -183,6 +191,13 @@ export function GenomicContextMenu(): React.ReactElement | null {
             icon="📊"
             onClick={handleGCContent}
             disabled={isRunning || selectedRows.length === 0}
+          />
+          <MenuItem
+            label="Annotate Gene Names"
+            sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All rows → name column"}
+            icon="🧬"
+            onClick={handleAnnotateGenes}
+            disabled={isRunning}
           />
 
           <Divider />
