@@ -154,3 +154,6 @@ src/
 5. **File size**: Warning for >50MB files.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop. VCF files get Filter by FILTER column, Filter by QUAL score. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Delete, Copy.
+9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
+10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
