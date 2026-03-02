@@ -18,7 +18,7 @@ import { useContextMenuStore } from "../context-menu/GenomicContextMenu";
 import { EditableCell } from "./EditableCell";
 import type { GenomicRow } from "../../types/genomic";
 
-const ROW_HEIGHT = 32;
+const ROW_HEIGHT = 30;
 
 export function DataGrid(): React.ReactElement {
   const rows = useFileStore((s) => s.rows);
@@ -48,7 +48,7 @@ export function DataGrid(): React.ReactElement {
                 setSelectedRows(new Set(rows.map((r) => r._index)));
               }
             }}
-            className="accent-genome-blue"
+            className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-[3px] border border-elevated bg-raised transition-all checked:border-cyan-glow checked:bg-cyan-glow"
           />
         ),
         cell: ({ row }) => (
@@ -56,10 +56,10 @@ export function DataGrid(): React.ReactElement {
             type="checkbox"
             checked={selectedRowIndices.has(row.original._index)}
             onChange={() => toggleRow(row.original._index)}
-            className="accent-genome-blue"
+            className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-[3px] border border-elevated bg-transparent transition-all checked:border-cyan-glow checked:bg-cyan-glow"
           />
         ),
-        size: 36,
+        size: 38,
         enableSorting: false,
         enableColumnFilter: false,
       },
@@ -76,7 +76,7 @@ export function DataGrid(): React.ReactElement {
             value={String(info.getValue() ?? "")}
           />
         ),
-        size: col === "INFO" ? 250 : col === "chrom" || col === "CHROM" ? 90 : 120,
+        size: col === "INFO" ? 260 : col === "chrom" || col === "CHROM" ? 100 : 130,
       });
     }
 
@@ -128,7 +128,6 @@ export function DataGrid(): React.ReactElement {
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, rowOriginalIndex: number) => {
       e.preventDefault();
-      // Auto-select the row if not already selected
       if (!selectedRowIndices.has(rowOriginalIndex)) {
         setSelectedRows(new Set([rowOriginalIndex]));
       }
@@ -139,39 +138,34 @@ export function DataGrid(): React.ReactElement {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Table container */}
-      <div
-        ref={parentRef}
-        className="scrollbar-thin flex-1 overflow-auto"
-      >
-        <table className="w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-zinc-900">
+      {/* Table */}
+      <div ref={parentRef} className="scrollbar-thin flex-1 overflow-auto">
+        <table className="w-full border-collapse">
+          {/* Header */}
+          <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} className="bg-deep">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="border-b border-zinc-700 px-2 py-1.5 text-left text-xs font-medium text-zinc-400"
+                    className="border-b border-elevated/50 px-2.5 py-2 text-left"
                     style={{ width: header.getSize() }}
                   >
                     {header.isPlaceholder ? null : (
                       <div
                         className={
                           header.column.getCanSort()
-                            ? "flex cursor-pointer select-none items-center gap-1 hover:text-zinc-200"
-                            : ""
+                            ? "flex cursor-pointer select-none items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-text-muted transition-colors hover:text-text-secondary"
+                            : "flex items-center"
                         }
                         onClick={header.column.getToggleSortingHandler()}
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                        {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getIsSorted() === "asc" && (
-                          <span className="text-genome-blue">&#9650;</span>
+                          <span className="text-cyan-glow">&#9650;</span>
                         )}
                         {header.column.getIsSorted() === "desc" && (
-                          <span className="text-genome-blue">&#9660;</span>
+                          <span className="text-cyan-glow">&#9660;</span>
                         )}
                       </div>
                     )}
@@ -181,8 +175,8 @@ export function DataGrid(): React.ReactElement {
             ))}
           </thead>
 
+          {/* Body */}
           <tbody>
-            {/* Spacer for virtual scroll */}
             <tr>
               <td
                 colSpan={columnDefs.length}
@@ -199,33 +193,27 @@ export function DataGrid(): React.ReactElement {
                 <tr
                   key={row.id}
                   data-index={virtualRow.index}
-                  className={`border-b border-zinc-800/50 transition-colors ${
+                  className={`group border-b transition-colors ${
                     isSelected
-                      ? "bg-genome-blue/10"
-                      : "hover:bg-zinc-800/50"
+                      ? "border-cyan-glow/10 bg-cyan-glow/[0.06]"
+                      : "border-elevated/20 hover:bg-surface/60"
                   }`}
                   onClick={(e) => handleRowClick(e, virtualRow.index)}
-                  onContextMenu={(e) =>
-                    handleContextMenu(e, row.original._index)
-                  }
+                  onContextMenu={(e) => handleContextMenu(e, row.original._index)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-2 py-0.5 font-mono text-xs text-zinc-300"
+                      className="px-2.5 py-[5px] font-mono text-[12px] text-text-secondary"
                       style={{ width: cell.column.getSize() }}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
                 </tr>
               );
             })}
 
-            {/* Bottom spacer */}
             <tr>
               <td
                 colSpan={columnDefs.length}
@@ -241,13 +229,20 @@ export function DataGrid(): React.ReactElement {
       </div>
 
       {/* Status bar */}
-      <div className="flex items-center gap-4 border-t border-zinc-800 bg-zinc-900 px-4 py-1.5 text-xs text-zinc-500">
-        <span>{tableRows.length.toLocaleString()} rows</span>
+      <div className="glass-strong flex items-center gap-5 px-4 py-2 font-mono text-[11px]">
+        <span className="text-text-muted">
+          {tableRows.length.toLocaleString()} rows
+        </span>
         {selectedRowIndices.size > 0 && (
-          <span className="text-genome-blue">
+          <span className="flex items-center gap-1.5 text-cyan-glow">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-glow" />
             {selectedRowIndices.size} selected
           </span>
         )}
+        <div className="flex-1" />
+        <span className="text-text-ghost">
+          Right-click for operations
+        </span>
       </div>
     </div>
   );

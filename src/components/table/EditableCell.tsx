@@ -9,6 +9,11 @@ interface EditableCellProps {
   value: string;
 }
 
+const NUMERIC_COLUMNS = new Set([
+  "chromStart", "chromEnd", "POS", "score",
+  "thickStart", "thickEnd", "blockCount",
+]);
+
 export function EditableCell(props: EditableCellProps): React.ReactElement {
   const { rowIndex, colKey, value } = props;
   const updateCell = useFileStore((s) => s.updateCell);
@@ -29,11 +34,7 @@ export function EditableCell(props: EditableCellProps): React.ReactElement {
 
   const commitEdit = useCallback(() => {
     if (editValue !== value) {
-      const numericColumns = [
-        "chromStart", "chromEnd", "POS", "score",
-        "thickStart", "thickEnd", "blockCount",
-      ];
-      if (numericColumns.includes(colKey)) {
+      if (NUMERIC_COLUMNS.has(colKey)) {
         const parsed = parseInt(editValue, 10);
         if (!isNaN(parsed)) {
           updateCell(rowIndex, colKey, parsed);
@@ -69,14 +70,27 @@ export function EditableCell(props: EditableCellProps): React.ReactElement {
         onChange={(e) => setEditValue(e.target.value)}
         onBlur={commitEdit}
         onKeyDown={handleKeyDown}
-        className="w-full bg-zinc-700 px-1 py-0.5 text-xs text-zinc-100 outline-none ring-1 ring-genome-blue rounded"
+        className="w-full rounded-md border border-cyan-glow/40 bg-deep px-1.5 py-0.5 font-mono text-[12px] text-text-primary outline-none ring-1 ring-cyan-glow/20 transition-all"
       />
     );
   }
 
+  // Color-code chromosome values
+  const isChrom = colKey === "chrom" || colKey === "CHROM";
+  const isCoord = colKey === "chromStart" || colKey === "chromEnd" || colKey === "POS";
+  const isGC = colKey === "gc_content";
+
   return (
     <span
-      className="block w-full cursor-text truncate"
+      className={`block w-full cursor-text truncate transition-colors ${
+        isChrom
+          ? "font-medium text-electric"
+          : isCoord
+            ? "text-text-secondary tabular-nums"
+            : isGC
+              ? "text-nt-g"
+              : "text-text-secondary"
+      } group-hover:text-text-primary`}
       onDoubleClick={handleDoubleClick}
       title={value}
     >

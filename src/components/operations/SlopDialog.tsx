@@ -36,36 +36,50 @@ export function SlopDialog(props: SlopDialogProps): React.ReactElement | null {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-fade-in">
       <form
         onSubmit={handleSubmit}
-        className="w-96 rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl"
+        className="glass animate-slide-in w-[400px] rounded-2xl p-7 shadow-2xl shadow-black/50"
       >
-        <h2 className="mb-1 text-base font-semibold text-zinc-100">
-          Extend Regions
-        </h2>
-        <p className="mb-5 text-sm text-zinc-400">
-          Expand {regionCount} region{regionCount !== 1 ? "s" : ""} by N bases
-        </p>
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-glow/10">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
+              <path d="M21 12H3m18 0l-4-4m4 4l-4 4M3 12l4-4m-4 4l4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-text-primary">
+              Extend Regions
+            </h2>
+            <p className="text-xs text-text-muted">
+              {regionCount} region{regionCount !== 1 ? "s" : ""} will be modified
+            </p>
+          </div>
+        </div>
 
         {/* Symmetric toggle */}
-        <label className="mb-4 flex items-center gap-2 text-sm text-zinc-300">
-          <input
-            type="checkbox"
-            checked={symmetric}
-            onChange={(e) => {
-              setSymmetric(e.target.checked);
-              if (e.target.checked) setDownstream(upstream);
-            }}
-            className="accent-genome-blue"
-          />
-          Symmetric (same upstream & downstream)
+        <label className="mb-5 flex cursor-pointer items-center gap-2.5 text-sm text-text-secondary">
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={symmetric}
+              onChange={(e) => {
+                setSymmetric(e.target.checked);
+                if (e.target.checked) setDownstream(upstream);
+              }}
+              className="peer sr-only"
+            />
+            <div className="h-5 w-9 rounded-full bg-raised transition-colors peer-checked:bg-cyan-glow/30" />
+            <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-text-muted transition-all peer-checked:translate-x-4 peer-checked:bg-cyan-glow" />
+          </div>
+          Symmetric extension
         </label>
 
         {/* Upstream */}
         <div className="mb-3">
-          <label className="mb-1 block text-xs font-medium text-zinc-400">
-            {symmetric ? "Bases (both directions)" : "Upstream (bp)"}
+          <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+            {symmetric ? "Both directions (bp)" : "Upstream (bp)"}
           </label>
           <input
             ref={inputRef}
@@ -74,15 +88,15 @@ export function SlopDialog(props: SlopDialogProps): React.ReactElement | null {
             max="10000000"
             value={upstream}
             onChange={(e) => handleUpstreamChange(e.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-genome-blue"
+            className="w-full rounded-xl border border-elevated bg-deep px-4 py-2.5 font-mono text-sm text-text-primary outline-none transition-all focus:border-cyan-glow/30 focus:ring-1 focus:ring-cyan-glow/20"
             placeholder="200"
           />
         </div>
 
-        {/* Downstream (only if not symmetric) */}
+        {/* Downstream */}
         {!symmetric && (
           <div className="mb-3">
-            <label className="mb-1 block text-xs font-medium text-zinc-400">
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-text-muted">
               Downstream (bp)
             </label>
             <input
@@ -91,26 +105,36 @@ export function SlopDialog(props: SlopDialogProps): React.ReactElement | null {
               max="10000000"
               value={downstream}
               onChange={(e) => setDownstream(e.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-genome-blue"
+              className="w-full rounded-xl border border-elevated bg-deep px-4 py-2.5 font-mono text-sm text-text-primary outline-none transition-all focus:border-cyan-glow/30 focus:ring-1 focus:ring-cyan-glow/20"
               placeholder="200"
             />
           </div>
         )}
 
-        {/* Quick presets */}
-        <div className="mb-5 flex gap-2">
-          {[100, 500, 1000, 2000, 5000].map((val) => (
+        {/* Presets */}
+        <div className="mb-6 mt-4 flex gap-2">
+          {[
+            { v: 100, l: "100bp" },
+            { v: 500, l: "500bp" },
+            { v: 1000, l: "1kb" },
+            { v: 2000, l: "2kb" },
+            { v: 5000, l: "5kb" },
+          ].map((preset) => (
             <button
-              key={val}
+              key={preset.v}
               type="button"
               onClick={() => {
-                const s = String(val);
+                const s = String(preset.v);
                 setUpstream(s);
                 if (symmetric) setDownstream(s);
               }}
-              className="rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+              className={`flex-1 rounded-lg border py-1.5 font-mono text-[11px] transition-all ${
+                parseInt(upstream, 10) === preset.v
+                  ? "border-cyan-glow/30 bg-cyan-glow/10 text-cyan-glow"
+                  : "border-elevated bg-raised text-text-muted hover:border-elevated hover:bg-elevated hover:text-text-secondary"
+              }`}
             >
-              {val >= 1000 ? `${val / 1000}kb` : `${val}bp`}
+              {preset.l}
             </button>
           ))}
         </div>
@@ -120,15 +144,15 @@ export function SlopDialog(props: SlopDialogProps): React.ReactElement | null {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+            className="rounded-xl px-5 py-2 text-sm text-text-muted transition-colors hover:bg-raised hover:text-text-secondary"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-genome-blue px-4 py-2 text-sm font-medium text-white hover:bg-genome-blue/80"
+            className="rounded-xl bg-cyan-glow px-5 py-2 text-sm font-semibold text-void transition-all hover:bg-cyan-glow/90 hover:shadow-lg hover:shadow-cyan-glow/20"
           >
-            Extend
+            Extend Regions
           </button>
         </div>
       </form>

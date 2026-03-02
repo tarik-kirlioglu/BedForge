@@ -8,8 +8,11 @@ export function App(): React.ReactElement {
       <Toaster
         position="bottom-right"
         theme="dark"
+        gap={8}
         toastOptions={{
-          className: "!bg-zinc-800 !border-zinc-700 !text-zinc-100",
+          className:
+            "!bg-surface !border !border-elevated/50 !text-text-primary !shadow-2xl !shadow-black/40 !rounded-xl !font-[Sora]",
+          descriptionClassName: "!text-text-muted !font-mono !text-[11px]",
         }}
       />
       <AppShell />

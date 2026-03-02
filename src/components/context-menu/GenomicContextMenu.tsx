@@ -7,11 +7,11 @@ import { useOperationStore } from "../../stores/useOperationStore";
 import { runLiftOver } from "../../operations/liftover-operation";
 import { runCleanIntergenic } from "../../operations/clean-intergenic";
 import { runGCContent } from "../../operations/gc-content";
+import { runAnnotateGenes } from "../../operations/annotate-genes";
 import { runSort } from "../../operations/sort-rows";
 import { runRemoveDuplicates } from "../../operations/remove-duplicates";
 import { runMergeRegions } from "../../operations/merge-regions";
 import { runExtendRegions } from "../../operations/extend-regions";
-import { runAnnotateGenes } from "../../operations/annotate-genes";
 import { SlopDialog } from "../operations/SlopDialog";
 
 interface ContextMenuState {
@@ -70,8 +70,6 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const isBed = fileFormat !== "vcf";
   const targetAssembly = assembly === "GRCh37" ? "GRCh38" : "GRCh37";
 
-  // --- Handlers ---
-
   function handleLiftOver(): void {
     close();
     if (!assembly) return;
@@ -81,12 +79,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   function handleCleanIntergenic(): void {
     close();
     if (!assembly) return;
-    runCleanIntergenic(
-      isBed ? rows : selectedRows,
-      assembly,
-      useChrPrefix,
-      isBed,
-    );
+    runCleanIntergenic(isBed ? rows : selectedRows, assembly, useChrPrefix, isBed);
   }
 
   function handleGCContent(): void {
@@ -145,15 +138,13 @@ export function GenomicContextMenu(): React.ReactElement | null {
     navigator.clipboard.writeText(text);
   }
 
-  // Viewport-aware positioning
   const menuWidth = 280;
-  const menuHeight = 420;
+  const menuHeight = 460;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
   return (
     <>
-      {/* Slop Dialog (always mounted, visibility toggled) */}
       <SlopDialog
         visible={showSlopDialog}
         onConfirm={handleSlopConfirm}
@@ -161,69 +152,68 @@ export function GenomicContextMenu(): React.ReactElement | null {
         regionCount={selectedRows.length > 0 ? selectedRows.length : rows.length}
       />
 
-      {/* Context Menu */}
       {visible && (
         <div
           ref={menuRef}
-          className="fixed z-50 min-w-[260px] rounded-lg border border-zinc-700 bg-zinc-900 py-1 shadow-xl shadow-black/40"
+          className="glass animate-slide-in fixed z-50 min-w-[270px] rounded-xl py-1.5 shadow-2xl shadow-black/60"
           style={{ left: adjustedX, top: adjustedY }}
         >
-          {/* Section: Ensembl API Operations */}
-          <MenuLabel text="Ensembl API" />
+          {/* Ensembl API */}
+          <SectionLabel text="Ensembl API" />
 
           <MenuItem
-            label={`LiftOver to ${targetAssembly}`}
+            label={`LiftOver → ${targetAssembly}`}
             sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
-            icon="🔄"
+            icon={<IconLiftOver />}
             onClick={handleLiftOver}
             disabled={isRunning || selectedRows.length === 0}
           />
           <MenuItem
-            label="Clean Intergenic Regions"
-            sublabel={isBed ? "All rows" : "Selected rows"}
-            icon="🧹"
-            onClick={handleCleanIntergenic}
+            label="Annotate Gene Names"
+            sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All → name column"}
+            icon={<IconDNA />}
+            onClick={handleAnnotateGenes}
             disabled={isRunning}
           />
           <MenuItem
             label="Calculate GC Content"
             sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
-            icon="📊"
+            icon={<IconChart />}
             onClick={handleGCContent}
             disabled={isRunning || selectedRows.length === 0}
           />
           <MenuItem
-            label="Annotate Gene Names"
-            sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All rows → name column"}
-            icon="🧬"
-            onClick={handleAnnotateGenes}
+            label="Clean Intergenic"
+            sublabel={isBed ? "All rows" : "Selected"}
+            icon={<IconFilter />}
+            onClick={handleCleanIntergenic}
             disabled={isRunning}
           />
 
           <Divider />
 
-          {/* Section: BED Operations (client-side) */}
-          <MenuLabel text="BED Operations" />
+          {/* BED Ops */}
+          <SectionLabel text="Transform" />
 
           <MenuItem
             label="Sort by Position"
-            sublabel="Natural chromosome order"
-            icon="↕️"
+            sublabel="chr1..22, X, Y, M"
+            icon={<IconSort />}
             onClick={handleSort}
             disabled={rows.length === 0}
           />
           <MenuItem
             label="Remove Duplicates"
-            sublabel="By chrom:start:end"
-            icon="✂️"
+            sublabel="By coordinates"
+            icon={<IconDedup />}
             onClick={handleRemoveDuplicates}
             disabled={rows.length === 0}
           />
           {isBed && (
             <MenuItem
               label="Merge Overlapping"
-              sublabel="Combine overlapping regions"
-              icon="🔗"
+              sublabel="Combine regions"
+              icon={<IconMerge />}
               onClick={handleMergeRegions}
               disabled={rows.length === 0}
             />
@@ -231,25 +221,25 @@ export function GenomicContextMenu(): React.ReactElement | null {
           <MenuItem
             label="Extend / Slop"
             sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All rows"}
-            icon="↔️"
+            icon={<IconExtend />}
             onClick={handleExtendRegions}
             disabled={rows.length === 0}
           />
 
           <Divider />
 
-          {/* Section: Edit */}
+          {/* Edit */}
           <MenuItem
-            label="Delete Selected Rows"
+            label="Delete Selected"
             sublabel={`${selectedRows.length} row${selectedRows.length !== 1 ? "s" : ""}`}
-            icon="🗑️"
+            icon={<IconDelete />}
             onClick={handleDeleteRows}
             disabled={selectedRows.length === 0}
             danger
           />
           <MenuItem
             label="Copy to Clipboard"
-            icon="📋"
+            icon={<IconCopy />}
             onClick={handleCopyRows}
             disabled={selectedRows.length === 0}
           />
@@ -259,24 +249,24 @@ export function GenomicContextMenu(): React.ReactElement | null {
   );
 }
 
-// --- Sub-components ---
+// ── Sub-components ──
 
-function MenuLabel(props: { text: string }): React.ReactElement {
+function SectionLabel(props: { text: string }): React.ReactElement {
   return (
-    <div className="px-3 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+    <div className="px-3.5 pb-1 pt-2 text-[9px] font-bold uppercase tracking-[0.15em] text-text-ghost">
       {props.text}
     </div>
   );
 }
 
 function Divider(): React.ReactElement {
-  return <div className="my-1 border-t border-zinc-800" />;
+  return <div className="my-1.5 border-t border-elevated/40" />;
 }
 
 interface MenuItemProps {
   label: string;
   sublabel?: string;
-  icon: string;
+  icon: React.ReactElement;
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
@@ -289,21 +279,106 @@ function MenuItem(props: MenuItemProps): React.ReactElement {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm transition-colors ${
+      className={`flex w-full items-center gap-3 px-3.5 py-[7px] text-left transition-all ${
         disabled
-          ? "cursor-not-allowed text-zinc-600"
+          ? "cursor-not-allowed opacity-30"
           : danger
-            ? "text-red-400 hover:bg-red-500/10"
-            : "text-zinc-300 hover:bg-zinc-800"
+            ? "text-danger hover:bg-danger/8"
+            : "text-text-secondary hover:bg-elevated/40 hover:text-text-primary"
       }`}
     >
-      <span className="w-5 text-center text-sm">{icon}</span>
-      <div className="flex-1">
-        <div>{label}</div>
+      <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[13px]">{label}</div>
         {sublabel && (
-          <div className="text-xs text-zinc-500">{sublabel}</div>
+          <div className="truncate font-mono text-[10px] text-text-ghost">{sublabel}</div>
         )}
       </div>
     </button>
+  );
+}
+
+// ── SVG Icons ──
+
+function IconLiftOver(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
+      <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconDNA(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
+      <path d="M12 2v20M8 4c0 3 8 5 8 8s-8 5-8 8" strokeLinecap="round" />
+      <path d="M16 4c0 3-8 5-8 8s8 5 8 8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconChart(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+      <path d="M18 20V10M12 20V4M6 20v-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconFilter(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="1.5">
+      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconSort(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 6h18M3 12h12M3 18h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconDedup(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M16 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V8l-5-5z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 3v6h6M9 15l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconMerge(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M8 6h13M8 12h9M8 18h5M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconExtend(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M21 12H3m18 0l-4-4m4 4l-4 4M3 12l4-4m-4 4l4 4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconDelete(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconCopy(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="9" y="9" width="13" height="13" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

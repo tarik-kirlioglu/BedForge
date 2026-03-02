@@ -108,7 +108,8 @@ export function DropZone(): React.ReactElement {
     setIsDragOver(true);
   }
 
-  function handleDragLeave(): void {
+  function handleDragLeave(e: React.DragEvent): void {
+    e.preventDefault();
     setIsDragOver(false);
   }
 
@@ -121,31 +122,47 @@ export function DropZone(): React.ReactElement {
     if (file) processFile(file);
   }
 
+  // ── Assembly Picker Screen ──
   if (showAssemblyPicker) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
-        <div className="w-96 rounded-xl border border-zinc-800 bg-zinc-900 p-8 text-center shadow-2xl">
-          <div className="mb-2 text-3xl">🧬</div>
-          <h2 className="mb-2 text-lg font-semibold text-zinc-100">
-            Select Genome Assembly
+      <div className="relative flex h-screen items-center justify-center overflow-hidden bg-void">
+        <div className="bg-grid absolute inset-0 opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-void/50 to-void" />
+
+        <div className="animate-fade-in-up glass relative z-10 w-[420px] rounded-2xl p-8 text-center shadow-2xl">
+          {/* DNA icon */}
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-glow/10">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-cyan-glow">
+              <path d="M12 2v20M8 4c0 3 8 5 8 8s-8 5-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M16 4c0 3-8 5-8 8s8 5 8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="8" cy="8" r="1.5" fill="#10b981" />
+              <circle cx="16" cy="8" r="1.5" fill="#f43f5e" />
+              <circle cx="8" cy="16" r="1.5" fill="#3b82f6" />
+              <circle cx="16" cy="16" r="1.5" fill="#f59e0b" />
+            </svg>
+          </div>
+
+          <h2 className="mb-1 text-lg font-semibold text-text-primary">
+            Reference Assembly
           </h2>
-          <p className="mb-6 text-sm text-zinc-400">
-            Which reference genome does this file use?
+          <p className="mb-7 text-sm text-text-secondary">
+            Which genome build does this file use?
           </p>
+
           <div className="flex gap-3">
             <button
               onClick={() => handleAssemblySelect("GRCh37")}
-              className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:border-genome-blue hover:bg-zinc-700"
+              className="group flex-1 rounded-xl border border-elevated bg-raised/50 px-4 py-4 text-center transition-all hover:border-cyan-glow/30 hover:bg-raised"
             >
-              <div className="text-base font-semibold">GRCh37</div>
-              <div className="mt-0.5 text-xs text-zinc-400">hg19</div>
+              <div className="text-base font-semibold text-text-primary group-hover:text-cyan-glow transition-colors">GRCh37</div>
+              <div className="mt-1 font-mono text-xs text-text-muted">hg19</div>
             </button>
             <button
               onClick={() => handleAssemblySelect("GRCh38")}
-              className="flex-1 rounded-lg border border-genome-blue bg-genome-blue/10 px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-genome-blue/20"
+              className="group flex-1 rounded-xl border border-cyan-glow/20 bg-cyan-glow/5 px-4 py-4 text-center transition-all hover:border-cyan-glow/40 hover:bg-cyan-glow/10"
             >
-              <div className="text-base font-semibold">GRCh38</div>
-              <div className="mt-0.5 text-xs text-zinc-400">hg38</div>
+              <div className="text-base font-semibold text-cyan-glow">GRCh38</div>
+              <div className="mt-1 font-mono text-xs text-text-secondary">hg38</div>
             </button>
           </div>
         </div>
@@ -153,50 +170,162 @@ export function DropZone(): React.ReactElement {
     );
   }
 
+  // ── Main Landing Screen ──
   return (
     <div
-      className="flex h-screen items-center justify-center bg-zinc-950 p-8"
+      className="relative flex h-screen flex-col items-center overflow-hidden bg-void"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      <button
-        onClick={handleClick}
-        className={`flex w-full max-w-xl cursor-pointer flex-col items-center gap-4 rounded-2xl border-2 border-dashed p-16 transition-all ${
-          isDragOver
-            ? "border-genome-blue bg-genome-blue/5 shadow-lg shadow-genome-blue/10"
-            : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-500 hover:bg-zinc-900"
-        }`}
-      >
-        {/* DNA helix icon */}
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-800">
-          <svg className="h-8 w-8 text-genome-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M2 15c6.667-6 13.333 0 20-6" strokeLinecap="round" />
-            <path d="M2 9c6.667 6 13.333 0 20 6" strokeLinecap="round" />
-            <path d="M7 9v6M12 6v12M17 9v6" strokeLinecap="round" />
-          </svg>
+      {/* Background layers */}
+      <div className="bg-grid absolute inset-0 opacity-20" />
+
+      {/* Radial glow behind the chamber */}
+      <div className="absolute left-1/2 top-[35%] h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-glow/[0.03] blur-[100px]" />
+      <div className="absolute left-1/2 top-[35%] h-[300px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-electric/[0.04] blur-[80px]" />
+
+      {/* Noise overlay */}
+      <div className="noise absolute inset-0" />
+
+      {/* Gradient fade at edges */}
+      <div className="absolute inset-0 bg-gradient-to-b from-void via-transparent to-void" />
+      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-void to-transparent" />
+      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-void to-transparent" />
+
+      {/* ── Hero Section ── */}
+      <div className="stagger relative z-10 mt-[12vh] flex flex-col items-center">
+        {/* Brand */}
+        <div className="animate-fade-in-up mb-3 flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-glow/20 to-electric/20 shadow-lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h16M4 12h16M4 18h10" stroke="#06d6a0" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="20" cy="18" r="2.5" fill="#4361ee" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            Bed<span className="text-cyan-glow">Forge</span>
+          </h1>
         </div>
 
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-zinc-200">
-            Drop a BED or VCF file here
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            or click to browse
-          </p>
-        </div>
+        <p className="animate-fade-in-up mb-10 max-w-md text-center text-[15px] leading-relaxed text-text-secondary">
+          Visual genomic editor for <span className="font-mono text-cyan-glow/80 text-sm">BED</span> and <span className="font-mono text-electric text-sm">VCF</span> files.
+          LiftOver, annotate, merge — without writing a single line of code.
+        </p>
 
-        <div className="flex gap-2">
-          {["BED3-12", "VCF 4.x"].map((fmt) => (
-            <span
-              key={fmt}
-              className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-mono text-zinc-400"
+        {/* ── Drop Chamber ── */}
+        <button
+          onClick={handleClick}
+          className={`animate-fade-in-up group relative flex w-[520px] cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed px-12 py-14 transition-all duration-500 ${
+            isDragOver
+              ? "glow-border border-cyan-glow bg-cyan-glow/[0.04] scale-[1.01]"
+              : "border-elevated/60 bg-surface/30 hover:border-text-muted/40 hover:bg-surface/50"
+          }`}
+        >
+          {/* Animated ring */}
+          <div className={`mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-all duration-500 ${
+            isDragOver
+              ? "bg-cyan-glow/15 shadow-lg shadow-cyan-glow/20"
+              : "bg-raised group-hover:bg-elevated"
+          }`}>
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              className={`transition-all duration-500 ${
+                isDragOver ? "text-cyan-glow scale-110" : "text-text-muted group-hover:text-text-secondary"
+              }`}
             >
-              {fmt}
-            </span>
+              <path d="M12 16V4m0 0L8 8m4-4l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 14v4a2 2 0 002 2h12a2 2 0 002-2v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+
+          <span className={`text-base font-medium transition-colors ${
+            isDragOver ? "text-cyan-glow" : "text-text-primary"
+          }`}>
+            {isDragOver ? "Release to load" : "Drop your genomic file"}
+          </span>
+          <span className="mt-1.5 text-sm text-text-muted">
+            or click to browse
+          </span>
+
+          {/* Format badges */}
+          <div className="mt-6 flex items-center gap-2">
+            {[
+              { label: "BED3–12", color: "cyan-glow" },
+              { label: "VCF 4.x", color: "electric" },
+            ].map((fmt) => (
+              <span
+                key={fmt.label}
+                className={`rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide ${
+                  fmt.color === "cyan-glow"
+                    ? "border-cyan-glow/15 bg-cyan-glow/5 text-cyan-glow/70"
+                    : "border-electric/15 bg-electric/5 text-electric/70"
+                }`}
+              >
+                {fmt.label}
+              </span>
+            ))}
+          </div>
+        </button>
+
+        {/* ── Feature Cards ── */}
+        <div className="animate-fade-in-up mt-14 grid w-[640px] grid-cols-3 gap-3">
+          {[
+            {
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
+                  <path d="M12 2v20M8 4c0 3 8 5 8 8s-8 5-8 8" strokeLinecap="round" />
+                  <path d="M16 4c0 3-8 5-8 8s8 5 8 8" strokeLinecap="round" />
+                </svg>
+              ),
+              title: "LiftOver",
+              desc: "hg19 ↔ hg38 coordinate conversion",
+            },
+            {
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
+                  <rect x="3" y="3" width="7" height="7" rx="1" strokeLinecap="round" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" strokeLinecap="round" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" strokeLinecap="round" />
+                  <path d="M17.5 14v7m-3.5-3.5h7" strokeLinecap="round" />
+                </svg>
+              ),
+              title: "Merge & Sort",
+              desc: "Deduplicate, merge, extend regions",
+            },
+            {
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+                  <path d="M4 6h16M4 10h16M4 14h10M4 18h6" strokeLinecap="round" />
+                  <circle cx="18" cy="16" r="4" />
+                  <path d="M18 14v4l2-1" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ),
+              title: "Annotate",
+              desc: "Gene names, GC content, filtering",
+            },
+          ].map((card) => (
+            <div
+              key={card.title}
+              className="rounded-xl border border-elevated/60 bg-surface/30 px-4 py-4 transition-colors hover:border-elevated hover:bg-surface/60"
+            >
+              <div className="mb-2.5 flex h-8 w-8 items-center justify-center rounded-lg bg-raised">
+                {card.icon}
+              </div>
+              <div className="text-[13px] font-medium text-text-primary">{card.title}</div>
+              <div className="mt-0.5 text-[11px] leading-relaxed text-text-muted">{card.desc}</div>
+            </div>
           ))}
         </div>
-      </button>
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="absolute bottom-6 z-10 text-[11px] text-text-ghost">
+        Built for bioinformaticians. No backend — your data stays in the browser.
+      </div>
 
       <input
         ref={fileInputRef}

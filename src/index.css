@@ -1,34 +1,174 @@
 @import "tailwindcss";
 
 @theme {
-  --color-genome-blue: #3b82f6;
-  --color-genome-green: #10b981;
-  --color-genome-amber: #f59e0b;
-  --color-genome-red: #ef4444;
-  --color-genome-purple: #8b5cf6;
+  /* ── Deep Navy Foundation ── */
+  --color-void: #060a13;
+  --color-abyss: #0a1020;
+  --color-deep: #0f1729;
+  --color-surface: #151d30;
+  --color-raised: #1c2640;
+  --color-elevated: #243050;
+
+  /* ── Bioluminescent Accents ── */
+  --color-cyan-glow: #06d6a0;
+  --color-cyan-dim: #06d6a066;
+  --color-cyan-faint: #06d6a01a;
+  --color-electric: #4361ee;
+  --color-electric-dim: #4361ee66;
+
+  /* ── Nucleotide Colors ── */
+  --color-nt-a: #10b981;
+  --color-nt-t: #f43f5e;
+  --color-nt-c: #3b82f6;
+  --color-nt-g: #f59e0b;
+
+  /* ── Text Hierarchy ── */
+  --color-text-primary: #e8edf5;
+  --color-text-secondary: #8892a8;
+  --color-text-muted: #4a5568;
+  --color-text-ghost: #2d3748;
+
+  /* ── Semantic ── */
+  --color-danger: #f43f5e;
+  --color-success: #06d6a0;
+  --color-warning: #f59e0b;
 }
 
+/* ── Base ── */
 body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: "Sora", system-ui, sans-serif;
+  background: var(--color-void);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
-/* Scrollbar styling for the data grid */
+/* ── Data typography ── */
+.font-mono {
+  font-family: "JetBrains Mono", monospace !important;
+}
+
+/* ── Scrollbar ── */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 .scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #3f3f46;
-  border-radius: 3px;
+  background: var(--color-elevated);
+  border-radius: 99px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+/* ── Animated background grid ── */
+.bg-grid {
+  background-image:
+    linear-gradient(var(--color-cyan-faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-cyan-faint) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── Glow effects ── */
+.glow-cyan {
+  box-shadow:
+    0 0 20px var(--color-cyan-dim),
+    0 0 60px #06d6a022,
+    inset 0 1px 0 #06d6a015;
+}
+
+.glow-cyan-subtle {
+  box-shadow:
+    0 0 10px #06d6a011,
+    0 0 40px #06d6a008;
+}
+
+.glow-border {
+  border-color: var(--color-cyan-glow);
+  box-shadow:
+    0 0 15px var(--color-cyan-dim),
+    inset 0 0 15px #06d6a008;
+}
+
+/* ── DNA strand animation ── */
+@keyframes dna-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
+  50% { transform: translateY(-20px) rotate(3deg); opacity: 0.7; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out both;
+}
+
+/* ── Stagger children ── */
+.stagger > :nth-child(1) { animation-delay: 0ms; }
+.stagger > :nth-child(2) { animation-delay: 80ms; }
+.stagger > :nth-child(3) { animation-delay: 160ms; }
+.stagger > :nth-child(4) { animation-delay: 240ms; }
+.stagger > :nth-child(5) { animation-delay: 320ms; }
+.stagger > :nth-child(6) { animation-delay: 400ms; }
+
+/* ── Glass morphism ── */
+.glass {
+  background: linear-gradient(
+    135deg,
+    rgba(21, 29, 48, 0.85),
+    rgba(15, 23, 41, 0.95)
+  );
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(6, 214, 160, 0.08);
+}
+
+.glass-strong {
+  background: linear-gradient(
+    135deg,
+    rgba(21, 29, 48, 0.95),
+    rgba(10, 16, 32, 0.98)
+  );
+  backdrop-filter: blur(30px) saturate(1.3);
+  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  border: 1px solid rgba(6, 214, 160, 0.12);
+}
+
+/* ── Noise texture overlay ── */
+.noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.015;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
