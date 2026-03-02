@@ -1,6 +1,6 @@
 # BedForge
 
-Excel-like web editor for BED and VCF genomic files. No backend — all bioinformatics operations run via the Ensembl REST API.
+Visual genomic editor for BED and VCF files. No backend — all bioinformatics operations run via the Ensembl REST API. All data stays in the browser.
 
 ## Tech Stack
 
@@ -32,58 +32,93 @@ npm run lint       # Run ESLint
 ```
 src/
 ├── main.tsx                  # Entry point
-├── App.tsx                   # Root component
-├── index.css                 # Tailwind directives + global styles
+├── App.tsx                   # Root component + Sonner toaster
+├── index.css                 # Tailwind + design system tokens + animations
 ├── types/                    # TypeScript type definitions
-├── stores/                   # Zustand stores
+├── stores/                   # Zustand stores (file, selection, operation)
 ├── parsers/                  # BED/VCF file parsers
 ├── exporters/                # BED/VCF file exporters
-├── api/                      # Ensembl REST API client
-├── operations/               # Genomic operation orchestrators
-├── components/               # React components
+├── api/                      # Ensembl REST API client + rate limiter
+├── operations/               # Genomic + BED operation orchestrators
+├── components/
 │   ├── layout/               # AppShell, Toolbar
-│   ├── drop-zone/            # Drag & drop landing zone
-│   ├── table/                # DataGrid, EditableCell, TableHeader
-│   ├── context-menu/         # Right-click genomic menu
-│   └── operations/           # Operation progress UI
-├── hooks/                    # Custom React hooks
-└── utils/                    # Helper functions
+│   ├── drop-zone/            # Hero landing + drag & drop
+│   ├── table/                # DataGrid, EditableCell
+│   ├── context-menu/         # Right-click genomic menu + SVG icons
+│   └── operations/           # SlopDialog (extend/slop parameter input)
+├── hooks/                    # useKeyboardShortcuts
+└── utils/                    # chromosome.ts, gc-calculator.ts
 ```
+
+## Design System — "Genomic Instrument"
+
+### Typography
+- **UI / Headings**: Sora (Google Fonts) — geometric, scientific feel
+- **Data / Code**: JetBrains Mono (Google Fonts) — monospace for genomic coordinates
+- Never use Inter, Roboto, Arial, or system fonts
+
+### Color Palette (CSS custom properties in `index.css`)
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `void` | #060a13 | Deepest background |
+| `abyss` | #0a1020 | Secondary background |
+| `deep` | #0f1729 | Table header, input backgrounds |
+| `surface` | #151d30 | Cards, elevated panels |
+| `raised` | #1c2640 | Buttons, interactive elements |
+| `elevated` | #243050 | Borders, separators |
+| `cyan-glow` | #06d6a0 | Primary accent — selections, active states, brand |
+| `electric` | #4361ee | Secondary accent — chromosomes, VCF badges |
+| `nt-a` | #10b981 | Nucleotide A (Adenine) |
+| `nt-t` | #f43f5e | Nucleotide T (Thymine) |
+| `nt-c` | #3b82f6 | Nucleotide C (Cytosine) |
+| `nt-g` | #f59e0b | Nucleotide G (Guanine) / GC content |
+| `text-primary` | #e8edf5 | Main text |
+| `text-secondary` | #8892a8 | Secondary text, table cells |
+| `text-muted` | #4a5568 | Dimmed labels |
+| `text-ghost` | #2d3748 | Barely visible hints |
+
+### Visual Effects (CSS classes in `index.css`)
+- `.glass` / `.glass-strong` — Frosted glass morphism with blur + gradient
+- `.glow-cyan` / `.glow-cyan-subtle` — Bioluminescent box-shadow effects
+- `.glow-border` — Glowing border for active drop zones
+- `.bg-grid` — Subtle genomic grid background pattern
+- `.noise` — Film grain overlay via SVG filter
+- `.animate-fade-in-up` / `.animate-slide-in` / `.animate-fade-in` — Entry animations
+- `.stagger` — Cascading animation delays for child elements
+
+### Icon System
+- SVG icons inline in components (no icon library dependency)
+- Ensembl API operations: colored strokes (cyan, blue, amber, rose)
+- Client-side operations: `currentColor` stroke (inherits text color)
+- Size: 14×14 for menu items, 18×18 for feature cards, 20×20 for dialogs
 
 ## Code Rules
 
 ### General
 - **Language**: All source code in TypeScript with strict mode. `any` is forbidden — use `unknown` and narrow.
-- **Exports**: Named exports only, no default exports (`export function X`, `export const X`).
+- **Exports**: Named exports only, no default exports.
 - **File naming**: Components use `PascalCase.tsx`, everything else uses `kebab-case.ts`.
-- **Function style**: Prefer `function` declarations over arrow functions (hoisting + readability).
-- **Import order**: React → external libs → internal absolute → relative. Separate groups with blank lines.
+- **Function style**: Prefer `function` declarations over arrow functions.
+- **Import order**: React → external libs → internal absolute → relative. Separate with blank lines.
 
 ### React Components
-- Functional components only, no class components.
-- Props interfaces are defined in the same file as the component, not extracted.
-- Do not use `React.FC` — write `function Component(props: Props): React.ReactElement` directly.
-- Hooks go in `hooks/` directory with `use` prefix.
-- Event handlers use `handle` prefix: `handleClick`, `handleDrop`.
-
-### State Management
-- Zustand stores use `use` prefix: `useFileStore`, `useSelectionStore`.
-- Use Immer middleware for mutable-looking immutable updates.
-- No direct cross-store dependencies — components may read from multiple stores.
+- Functional components only, no `React.FC`.
+- Props interfaces defined in the same file.
+- Event handlers use `handle` prefix.
+- Components read from Zustand stores directly — no prop drilling.
 
 ### Styling
-- Use Tailwind utility classes, keep custom CSS minimal.
-- No inline styles (`style={}` is forbidden).
-- No responsive design needed — desktop-only application.
+- Tailwind utility classes using the custom design tokens above.
+- Inline `style={}` only for dynamic positioning (context menu x/y, virtual scroll heights).
+- No responsive design — desktop-only application.
+- Glass morphism via `.glass` / `.glass-strong` CSS classes, not inline backdrop-filter.
 
 ### Testing
-- Unit tests are mandatory for parsers and utility functions.
-- Test files live in `__tests__/` directories next to source files.
-- Naming convention: `describe('parseBed')` → `it('should parse BED4 with 4 columns')`.
+- Unit tests mandatory for parsers and utilities.
+- Test files in `__tests__/` directories next to source.
 
 ## Coordinate Systems (CRITICAL)
-
-This project deals with two different coordinate systems. Incorrect conversion causes data loss:
 
 | Format | System | Example (100bp region) |
 |--------|--------|------------------------|
@@ -98,10 +133,8 @@ This project deals with two different coordinate systems. Incorrect conversion c
 
 ## Chromosome Naming
 
-- BED/VCF files typically use `chr1`, `chrX`, `chrM`
-- Ensembl API expects `1`, `X`, `MT`
-- The `chr` prefix presence is detected on file load and preserved
-- Prefix is stripped for API calls, restored when writing results back
+- BED/VCF: `chr1`, `chrX`, `chrM` / Ensembl: `1`, `X`, `MT`
+- `chr` prefix detected on file load, stripped for API, restored in results
 - Special case: `chrM` ↔ `MT`
 
 ## Ensembl REST API
@@ -109,14 +142,15 @@ This project deals with two different coordinate systems. Incorrect conversion c
 - Base URL: `https://rest.ensembl.org`
 - Rate limit: **15 req/s** (we use 14 for safety margin)
 - Content-Type: `application/json`
-- On 429 response: read `Retry-After` header and wait
-- Batch operation concurrency: 5
+- On 429: read `Retry-After` header and wait
+- Batch concurrency: 5
 
 ## Important Notes
 
-1. **Large files**: BED files can have 1M+ rows. Use TanStack Virtual to render only visible rows.
-2. **Undo history**: Snapshot-based, max 20 entries. Memory must be managed carefully for large files.
-3. **VCF meta lines**: Lines starting with `##` must be preserved verbatim — written back as-is on export.
-4. **API errors**: 400 (invalid region) → skip row, continue. 429 → wait, retry. 503 → notify user.
-5. **File size**: Show warning for files >50MB.
-6. **BED format variety**: BED3, BED4, BED6, BED12 — auto-detect by column count.
+1. **Large files**: BED files can have 1M+ rows. TanStack Virtual renders only visible rows.
+2. **Undo history**: Snapshot-based, max 20 entries.
+3. **VCF meta lines**: `##` lines preserved verbatim for round-trip export.
+4. **API errors**: 400 → skip row. 429 → wait, retry. 503 → notify user.
+5. **File size**: Warning for >50MB files.
+6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
+7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.

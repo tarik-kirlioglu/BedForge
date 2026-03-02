@@ -6,8 +6,8 @@ Pure helper functions with no side effects and no React dependencies.
 
 | File | Purpose |
 |------|---------|
-| `chromosome.ts` | `toEnsemblChrom(chrom)`: strip `chr` prefix, `chrM`→`MT`. `fromEnsemblChrom(chrom, useChrPrefix)`: restore prefix |
-| `gc-calculator.ts` | `calculateGCContent(sequence: string)`: returns 0.0–1.0. Counts G+C / (A+T+G+C), skips N and ambiguous bases |
+| `chromosome.ts` | `toEnsemblChrom(chrom)`: strip `chr`, `chrM`→`MT`. `fromEnsemblChrom(chrom, useChrPrefix)`: restore. `detectChrPrefix(chrom)`: check if chr-prefixed |
+| `gc-calculator.ts` | `calculateGCContent(sequence)`: returns 0.0–1.0. Counts G+C / (A+T+G+C), skips N/ambiguous. Uses charCode comparison for performance |
 
 ## Rules
 

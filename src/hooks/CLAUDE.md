@@ -6,10 +6,13 @@ Custom React hooks for reusable UI logic.
 
 | File | Purpose |
 |------|---------|
-| `useFileDrop.ts` | Handles drag & drop events, reads file via FileReader, dispatches to parser, updates store |
-| `useContextMenu.ts` | Manages right-click menu state: position (x, y), visibility, target row index. Closes on outside click/scroll |
-| `useTableColumns.ts` | Generates TanStack Table column definitions dynamically from detected file format (BED3/4/6/12 or VCF) |
-| `useKeyboardShortcuts.ts` | Global keyboard shortcuts: Ctrl+Z undo, Ctrl+Shift+Z redo, Ctrl+S export, Ctrl+A select all, Delete rows |
+| `useKeyboardShortcuts.ts` | Global keyboard shortcuts: Ctrl+Z undo, Ctrl+Shift+Z/Ctrl+Y redo, Ctrl+A select all, Delete/Backspace remove rows, Escape clear selection |
+
+## Notes
+
+- File drop logic is handled directly in `DropZone.tsx` (not a separate hook).
+- Context menu state is managed via `useContextMenuStore` Zustand store in `GenomicContextMenu.tsx`.
+- Table column definitions are built inline in `DataGrid.tsx` via `useMemo`.
 
 ## Rules
 
@@ -17,4 +20,5 @@ Custom React hooks for reusable UI logic.
 - Hooks are pure logic — no JSX rendering.
 - Each hook is in its own file.
 - Hooks may read from Zustand stores.
-- `useEffect` cleanup is mandatory for event listeners (especially in `useContextMenu` and `useKeyboardShortcuts`).
+- `useEffect` cleanup is mandatory for event listeners.
+- Keyboard shortcuts must check `e.target.tagName` to avoid intercepting input/textarea editing.

@@ -1,14 +1,14 @@
 # parsers/
 
-BED and VCF file parsers. Converts raw text into typed row arrays.
+BED and VCF file parsers. Converts raw text into typed GenomicRow arrays.
 
 ## Module Structure
 
 | File | Purpose |
 |------|---------|
-| `bed-parser.ts` | `parseBed(text: string)` → `{ format: BedFormat, rows: BedRow[] }` |
-| `vcf-parser.ts` | `parseVcf(text: string)` → `VcfFile` (meta + header + rows) |
-| `detect-format.ts` | `detectFormat(fileName: string, content: string)` → `'bed' \| 'vcf'` |
+| `bed-parser.ts` | `parseBed(text)` → `{ format, rows, columns }`. Auto-detects BED3/4/6/12 by column count |
+| `vcf-parser.ts` | `parseVcf(text)` → `{ vcfFile, rows, columns }`. Preserves meta lines verbatim |
+| `detect-format.ts` | `detectFormat(fileName, content)` → `FileFormat \| null`. Extension-based + content sniffing |
 
 ## Critical Rules
 
@@ -20,6 +20,7 @@ BED and VCF file parsers. Converts raw text into typed row arrays.
 - Auto-detect BED sub-format by counting tab-separated columns in the first data line.
 - Handle both tab and space delimiters in BED (spec says tab, but tools vary).
 - Missing optional BED fields default to `.` (name, strand) or `0` (score).
+- Each row gets `_index` (sequential integer) and `_rowId` (unique string for TanStack Table keying).
 
 ## BED Column Mapping
 
@@ -32,7 +33,7 @@ BED and VCF file parsers. Converts raw text into typed row arrays.
 
 ## Testing
 
-Unit tests are mandatory. Test files go in `__tests__/`. Cover:
+Unit tests are mandatory. Cover:
 - Each BED sub-format (3, 4, 6, 12)
 - Windows line endings (`\r\n`)
 - Track/browser header lines

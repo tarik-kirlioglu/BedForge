@@ -1,47 +1,68 @@
 # components/
 
-React components organized by feature area.
+React components organized by feature area. All styled with the "Genomic Instrument" design system.
 
 ## Module Structure
 
 | Directory | Components | Purpose |
 |-----------|-----------|---------|
-| `layout/` | `AppShell.tsx`, `Toolbar.tsx` | Top-level layout, toolbar with file name, assembly badge, export, undo/redo |
-| `drop-zone/` | `DropZone.tsx` | Drag & drop file landing area, shown when no file is loaded |
-| `table/` | `DataGrid.tsx`, `EditableCell.tsx`, `TableHeader.tsx`, `ColumnFilter.tsx` | Core spreadsheet: virtualized table, cell editing, sorting, filtering |
-| `context-menu/` | `GenomicContextMenu.tsx` | Right-click menu with LiftOver, Clean Intergenic, GC Content, Delete, Copy |
-| `operations/` | `OperationProgress.tsx` | Progress toast/overlay during long-running genomic operations |
+| `layout/` | `AppShell.tsx`, `Toolbar.tsx` | Top-level layout with glass-strong toolbar, brand mark, operation progress, export dropdown |
+| `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal |
+| `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
+| `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
+| `operations/` | `SlopDialog.tsx` | Extend/Slop parameter dialog with custom toggle, preset buttons, glass morphism |
 
 ## Component Rules
 
 - Functional components only, no `React.FC`.
-- Props interface defined in the same file as the component.
-- Named exports only: `export function DataGrid(props: DataGridProps)`.
-- Event handlers use `handle` prefix: `handleCellDoubleClick`, `handleContextMenu`.
-- Components read from Zustand stores directly via hooks — no prop drilling for global state.
-- Tailwind utility classes for all styling. No inline styles.
+- Props interfaces defined in the same file.
+- Named exports: `export function DataGrid(...)`.
+- Event handlers use `handle` prefix.
+- Components read from Zustand stores directly — no prop drilling.
+- Styling: Tailwind utility classes with design system tokens (void, surface, cyan-glow, etc.).
+- Inline `style={}` only for dynamic values (context menu position, virtual scroll offsets).
 
 ## Key Component Details
 
-### DataGrid (most complex component)
-- Uses `@tanstack/react-table` for column defs, sorting, filtering, row selection.
-- Uses `@tanstack/react-virtual` for virtualized row rendering (~50 visible rows).
-- Columns are dynamically generated from the detected file format via `useTableColumns` hook.
-- First column is always a row selection checkbox.
+### DropZone (Landing Page)
+- Full-screen hero with `.bg-grid` animated background and radial glow effects
+- Brand mark: "BedForge" with cyan-glow accent
+- Drop chamber: Dashed border area with `.glow-border` on drag-over, scale transition
+- 3 feature cards: LiftOver, Merge & Sort, Annotate
+- Assembly picker: Glass modal with GRCh37/GRCh38 buttons
+- Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.txt`, `.tsv`
+- Footer: "Built for bioinformaticians. No backend."
+
+### Toolbar
+- `.glass-strong` surface with brand mark on left
+- File info: name (mono font), format badge (cyan for BED, electric for VCF), assembly badge (nt-a green), row count
+- Live operation progress: pulsing dot + operation name + count (shown during Ensembl API calls)
+- Actions: undo/redo SVG icons, export dropdown (glass menu), close button (danger hover)
+
+### DataGrid
+- TanStack Table + TanStack Virtual, ROW_HEIGHT = 30px
+- Header: `.bg-deep`, mono uppercase column names, cyan sort indicators
+- Custom checkboxes: appearance-none with cyan-glow checked state
+- Row hover: `bg-surface/60`, selected: `bg-cyan-glow/[0.06]` with cyan border
+- Cell color-coding: chromosomes = electric blue, coordinates = tabular-nums, gc_content = nt-g amber
+- Status bar: `.glass-strong`, row count, selection count with cyan dot, "Right-click for operations" hint
 
 ### EditableCell
-- Read mode: displays cell value as plain text.
-- Edit mode (double-click): renders an `<input>`, commits on Enter, cancels on Escape, moves on Tab.
-- Validates numeric fields (chromStart, chromEnd, POS) on commit.
+- Read mode: truncated text with color-coding by column type
+- Edit mode: `border-cyan-glow/40` input with `ring-cyan-glow/20` focus ring
+- Numeric validation for: chromStart, chromEnd, POS, score, thickStart, thickEnd, blockCount
 
 ### GenomicContextMenu
-- Custom implementation (no Radix) — rendered via React Portal at document body.
-- Positioned at mouse coordinates, flips to stay within viewport bounds.
-- Menu items are conditional: LiftOver direction depends on current assembly.
-- Closes on outside click, Escape key, or scroll.
+- `.glass` surface with `.animate-slide-in` entry animation
+- Section labels: 9px uppercase tracking-[0.15em] ghost text ("Ensembl API", "Transform")
+- Menu items: 14×14 colored SVG icons, 13px labels, 10px mono sublabels
+- Viewport-aware positioning (flips to stay in bounds)
+- Sections: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend) → Edit (Delete, Copy)
+- `useContextMenuStore`: Zustand store for visibility + position
 
-### DropZone
-- Dashed border area with drag-over highlight (blue border).
-- Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.txt`, `.tsv`.
-- Also supports click-to-browse via hidden `<input type="file">`.
-- After successful drop: triggers assembly selection (GRCh37 / GRCh38).
+### SlopDialog
+- Glass morphism modal with black/70 backdrop
+- Custom toggle switch (peer-checked pattern, not native checkbox)
+- Monospace number inputs with cyan focus ring
+- Preset buttons: 100bp, 500bp, 1kb, 2kb, 5kb — active state highlighted with cyan
+- CTA button: solid cyan-glow background, void text
