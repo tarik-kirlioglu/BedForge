@@ -144,7 +144,7 @@ export function SlopDialog(props: SlopDialogProps): React.ReactElement | null {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-xl px-5 py-2 text-sm text-text-muted transition-colors hover:bg-raised hover:text-text-secondary"
+            className="rounded-xl px-5 py-2 text-sm text-text-secondary transition-colors hover:bg-raised hover:text-text-primary"
           >
             Cancel
           </button>

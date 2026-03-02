@@ -253,14 +253,14 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
 function SectionLabel(props: { text: string }): React.ReactElement {
   return (
-    <div className="px-3.5 pb-1 pt-2 text-[9px] font-bold uppercase tracking-[0.15em] text-text-ghost">
+    <div className="px-3.5 pb-1 pt-2 text-[9px] font-bold uppercase tracking-[0.15em] text-text-muted">
       {props.text}
     </div>
   );
 }
 
 function Divider(): React.ReactElement {
-  return <div className="my-1.5 border-t border-elevated/40" />;
+  return <div className="my-1.5 border-t border-elevated/60" />;
 }
 
 interface MenuItemProps {
@@ -291,7 +291,7 @@ function MenuItem(props: MenuItemProps): React.ReactElement {
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13px]">{label}</div>
         {sublabel && (
-          <div className="truncate font-mono text-[10px] text-text-ghost">{sublabel}</div>
+          <div className="truncate font-mono text-[10px] text-text-muted">{sublabel}</div>
         )}
       </div>
     </button>

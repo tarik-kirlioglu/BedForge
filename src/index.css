@@ -7,7 +7,7 @@
   --color-deep: #0f1729;
   --color-surface: #151d30;
   --color-raised: #1c2640;
-  --color-elevated: #243050;
+  --color-elevated: #2e3d56;
 
   /* ── Bioluminescent Accents ── */
   --color-cyan-glow: #06d6a0;
@@ -25,8 +25,8 @@
   /* ── Text Hierarchy ── */
   --color-text-primary: #e8edf5;
   --color-text-secondary: #8892a8;
-  --color-text-muted: #4a5568;
-  --color-text-ghost: #2d3748;
+  --color-text-muted: #64748b;
+  --color-text-ghost: #4a5568;
 
   /* ── Semantic ── */
   --color-danger: #f43f5e;

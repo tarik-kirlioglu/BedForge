@@ -66,7 +66,7 @@ src/
 | `deep` | #0f1729 | Table header, input backgrounds |
 | `surface` | #151d30 | Cards, elevated panels |
 | `raised` | #1c2640 | Buttons, interactive elements |
-| `elevated` | #243050 | Borders, separators |
+| `elevated` | #2e3d56 | Borders, separators |
 | `cyan-glow` | #06d6a0 | Primary accent — selections, active states, brand |
 | `electric` | #4361ee | Secondary accent — chromosomes, VCF badges |
 | `nt-a` | #10b981 | Nucleotide A (Adenine) |
@@ -75,8 +75,8 @@ src/
 | `nt-g` | #f59e0b | Nucleotide G (Guanine) / GC content |
 | `text-primary` | #e8edf5 | Main text |
 | `text-secondary` | #8892a8 | Secondary text, table cells |
-| `text-muted` | #4a5568 | Dimmed labels |
-| `text-ghost` | #2d3748 | Barely visible hints |
+| `text-muted` | #64748b | Dimmed labels, secondary info |
+| `text-ghost` | #4a5568 | Subtle hints, footers |
 
 ### Visual Effects (CSS classes in `index.css`)
 - `.glass` / `.glass-strong` — Frosted glass morphism with blur + gradient

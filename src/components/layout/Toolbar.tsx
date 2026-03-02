@@ -107,7 +107,7 @@ export function Toolbar(): React.ReactElement {
           </span>
         )}
 
-        <span className="font-mono text-xs text-text-muted">
+        <span className="font-mono text-xs text-text-secondary">
           {rows.length.toLocaleString()} rows
         </span>
       </div>
@@ -129,7 +129,7 @@ export function Toolbar(): React.ReactElement {
         {/* Undo */}
         <button
           onClick={undo}
-          className="rounded-lg p-2 text-text-muted transition-colors hover:bg-raised hover:text-text-secondary"
+          className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-raised hover:text-text-primary"
           title="Undo (Ctrl+Z)"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -141,7 +141,7 @@ export function Toolbar(): React.ReactElement {
         {/* Redo */}
         <button
           onClick={redo}
-          className="rounded-lg p-2 text-text-muted transition-colors hover:bg-raised hover:text-text-secondary"
+          className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-raised hover:text-text-primary"
           title="Redo (Ctrl+Shift+Z)"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -196,7 +196,7 @@ export function Toolbar(): React.ReactElement {
         {/* Close */}
         <button
           onClick={reset}
-          className="ml-1 rounded-lg p-2 text-text-ghost transition-colors hover:bg-danger/10 hover:text-danger"
+          className="ml-1 rounded-lg p-2 text-text-muted transition-colors hover:bg-danger/10 hover:text-danger"
           title="Close file"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

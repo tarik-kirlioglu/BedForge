@@ -155,7 +155,7 @@ export function DataGrid(): React.ReactElement {
                       <div
                         className={
                           header.column.getCanSort()
-                            ? "flex cursor-pointer select-none items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-text-muted transition-colors hover:text-text-secondary"
+                            ? "flex cursor-pointer select-none items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-text-secondary transition-colors hover:text-text-primary"
                             : "flex items-center"
                         }
                         onClick={header.column.getToggleSortingHandler()}
@@ -196,7 +196,7 @@ export function DataGrid(): React.ReactElement {
                   className={`group border-b transition-colors ${
                     isSelected
                       ? "border-cyan-glow/10 bg-cyan-glow/[0.06]"
-                      : "border-elevated/20 hover:bg-surface/60"
+                      : "border-elevated/30 hover:bg-surface/60"
                   }`}
                   onClick={(e) => handleRowClick(e, virtualRow.index)}
                   onContextMenu={(e) => handleContextMenu(e, row.original._index)}
@@ -230,7 +230,7 @@ export function DataGrid(): React.ReactElement {
 
       {/* Status bar */}
       <div className="glass-strong flex items-center gap-5 px-4 py-2 font-mono text-[11px]">
-        <span className="text-text-muted">
+        <span className="text-text-secondary">
           {tableRows.length.toLocaleString()} rows
         </span>
         {selectedRowIndices.size > 0 && (
@@ -240,7 +240,7 @@ export function DataGrid(): React.ReactElement {
           </span>
         )}
         <div className="flex-1" />
-        <span className="text-text-ghost">
+        <span className="text-text-muted">
           Right-click for operations
         </span>
       </div>
