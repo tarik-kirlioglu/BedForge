@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 
 import { useFileStore } from "../../stores/useFileStore";
@@ -7,6 +7,11 @@ import { useOperationStore } from "../../stores/useOperationStore";
 import { runLiftOver } from "../../operations/liftover-operation";
 import { runCleanIntergenic } from "../../operations/clean-intergenic";
 import { runGCContent } from "../../operations/gc-content";
+import { runSort } from "../../operations/sort-rows";
+import { runRemoveDuplicates } from "../../operations/remove-duplicates";
+import { runMergeRegions } from "../../operations/merge-regions";
+import { runExtendRegions } from "../../operations/extend-regions";
+import { SlopDialog } from "../operations/SlopDialog";
 
 interface ContextMenuState {
   visible: boolean;
@@ -35,6 +40,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const clearSelection = useSelectionStore((s) => s.clearSelection);
   const isRunning = useOperationStore((s) => s.isRunning);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [showSlopDialog, setShowSlopDialog] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -59,17 +65,11 @@ export function GenomicContextMenu(): React.ReactElement | null {
     };
   }, [visible, close]);
 
-  if (!visible) return null;
-
   const selectedRows = rows.filter((r) => selectedRowIndices.has(r._index));
   const isBed = fileFormat !== "vcf";
   const targetAssembly = assembly === "GRCh37" ? "GRCh38" : "GRCh37";
 
-  // Viewport-aware positioning
-  const menuWidth = 260;
-  const menuHeight = 240;
-  const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
-  const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
+  // --- Handlers ---
 
   function handleLiftOver(): void {
     close();
@@ -94,6 +94,32 @@ export function GenomicContextMenu(): React.ReactElement | null {
     runGCContent(selectedRows, assembly, useChrPrefix, isBed);
   }
 
+  function handleSort(): void {
+    close();
+    runSort(isBed);
+  }
+
+  function handleRemoveDuplicates(): void {
+    close();
+    runRemoveDuplicates(isBed);
+  }
+
+  function handleMergeRegions(): void {
+    close();
+    runMergeRegions();
+  }
+
+  function handleExtendRegions(): void {
+    close();
+    setShowSlopDialog(true);
+  }
+
+  function handleSlopConfirm(upstream: number, downstream: number): void {
+    setShowSlopDialog(false);
+    const targets = selectedRows.length > 0 ? selectedRows : rows;
+    runExtendRegions(targets, upstream, downstream, isBed);
+  }
+
   function handleDeleteRows(): void {
     close();
     deleteRows(selectedRowIndices);
@@ -111,64 +137,125 @@ export function GenomicContextMenu(): React.ReactElement | null {
     navigator.clipboard.writeText(text);
   }
 
+  // Viewport-aware positioning
+  const menuWidth = 280;
+  const menuHeight = 420;
+  const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
+  const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
+
   return (
-    <div
-      ref={menuRef}
-      className="fixed z-50 min-w-[240px] rounded-lg border border-zinc-700 bg-zinc-900 py-1 shadow-xl shadow-black/40"
-      style={{ left: adjustedX, top: adjustedY }}
-    >
-      {/* LiftOver */}
-      <MenuItem
-        label={`LiftOver to ${targetAssembly}`}
-        sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
-        icon="🔄"
-        onClick={handleLiftOver}
-        disabled={isRunning || selectedRows.length === 0}
+    <>
+      {/* Slop Dialog (always mounted, visibility toggled) */}
+      <SlopDialog
+        visible={showSlopDialog}
+        onConfirm={handleSlopConfirm}
+        onCancel={() => setShowSlopDialog(false)}
+        regionCount={selectedRows.length > 0 ? selectedRows.length : rows.length}
       />
 
-      <div className="my-1 border-t border-zinc-800" />
+      {/* Context Menu */}
+      {visible && (
+        <div
+          ref={menuRef}
+          className="fixed z-50 min-w-[260px] rounded-lg border border-zinc-700 bg-zinc-900 py-1 shadow-xl shadow-black/40"
+          style={{ left: adjustedX, top: adjustedY }}
+        >
+          {/* Section: Ensembl API Operations */}
+          <MenuLabel text="Ensembl API" />
 
-      {/* Clean Intergenic */}
-      <MenuItem
-        label="Clean Intergenic Regions"
-        sublabel={isBed ? "All rows" : "Selected rows"}
-        icon="🧹"
-        onClick={handleCleanIntergenic}
-        disabled={isRunning}
-      />
+          <MenuItem
+            label={`LiftOver to ${targetAssembly}`}
+            sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
+            icon="🔄"
+            onClick={handleLiftOver}
+            disabled={isRunning || selectedRows.length === 0}
+          />
+          <MenuItem
+            label="Clean Intergenic Regions"
+            sublabel={isBed ? "All rows" : "Selected rows"}
+            icon="🧹"
+            onClick={handleCleanIntergenic}
+            disabled={isRunning}
+          />
+          <MenuItem
+            label="Calculate GC Content"
+            sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
+            icon="📊"
+            onClick={handleGCContent}
+            disabled={isRunning || selectedRows.length === 0}
+          />
 
-      <div className="my-1 border-t border-zinc-800" />
+          <Divider />
 
-      {/* GC Content */}
-      <MenuItem
-        label="Calculate GC Content"
-        sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
-        icon="📊"
-        onClick={handleGCContent}
-        disabled={isRunning || selectedRows.length === 0}
-      />
+          {/* Section: BED Operations (client-side) */}
+          <MenuLabel text="BED Operations" />
 
-      <div className="my-1 border-t border-zinc-800" />
+          <MenuItem
+            label="Sort by Position"
+            sublabel="Natural chromosome order"
+            icon="↕️"
+            onClick={handleSort}
+            disabled={rows.length === 0}
+          />
+          <MenuItem
+            label="Remove Duplicates"
+            sublabel="By chrom:start:end"
+            icon="✂️"
+            onClick={handleRemoveDuplicates}
+            disabled={rows.length === 0}
+          />
+          {isBed && (
+            <MenuItem
+              label="Merge Overlapping"
+              sublabel="Combine overlapping regions"
+              icon="🔗"
+              onClick={handleMergeRegions}
+              disabled={rows.length === 0}
+            />
+          )}
+          <MenuItem
+            label="Extend / Slop"
+            sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All rows"}
+            icon="↔️"
+            onClick={handleExtendRegions}
+            disabled={rows.length === 0}
+          />
 
-      {/* Delete */}
-      <MenuItem
-        label="Delete Selected Rows"
-        sublabel={`${selectedRows.length} row${selectedRows.length !== 1 ? "s" : ""}`}
-        icon="🗑️"
-        onClick={handleDeleteRows}
-        disabled={selectedRows.length === 0}
-        danger
-      />
+          <Divider />
 
-      {/* Copy */}
-      <MenuItem
-        label="Copy to Clipboard"
-        icon="📋"
-        onClick={handleCopyRows}
-        disabled={selectedRows.length === 0}
-      />
+          {/* Section: Edit */}
+          <MenuItem
+            label="Delete Selected Rows"
+            sublabel={`${selectedRows.length} row${selectedRows.length !== 1 ? "s" : ""}`}
+            icon="🗑️"
+            onClick={handleDeleteRows}
+            disabled={selectedRows.length === 0}
+            danger
+          />
+          <MenuItem
+            label="Copy to Clipboard"
+            icon="📋"
+            onClick={handleCopyRows}
+            disabled={selectedRows.length === 0}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+// --- Sub-components ---
+
+function MenuLabel(props: { text: string }): React.ReactElement {
+  return (
+    <div className="px-3 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+      {props.text}
     </div>
   );
+}
+
+function Divider(): React.ReactElement {
+  return <div className="my-1 border-t border-zinc-800" />;
 }
 
 interface MenuItemProps {
