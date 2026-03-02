@@ -12,7 +12,10 @@ import { runSort } from "../../operations/sort-rows";
 import { runRemoveDuplicates } from "../../operations/remove-duplicates";
 import { runMergeRegions } from "../../operations/merge-regions";
 import { runExtendRegions } from "../../operations/extend-regions";
+import { runFilterByFilter, runFilterByQual } from "../../operations/filter-vcf";
 import { SlopDialog } from "../operations/SlopDialog";
+import { FilterColumnDialog } from "../operations/FilterColumnDialog";
+import { QualFilterDialog } from "../operations/QualFilterDialog";
 
 interface ContextMenuState {
   visible: boolean;
@@ -42,6 +45,8 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const isRunning = useOperationStore((s) => s.isRunning);
   const menuRef = useRef<HTMLDivElement>(null);
   const [showSlopDialog, setShowSlopDialog] = useState(false);
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [showQualDialog, setShowQualDialog] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -68,7 +73,10 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
   const selectedRows = rows.filter((r) => selectedRowIndices.has(r._index));
   const isBed = fileFormat !== "vcf";
+  const isVcf = fileFormat === "vcf";
   const targetAssembly = assembly === "GRCh37" ? "GRCh38" : "GRCh37";
+
+  // ── Handlers ──
 
   function handleLiftOver(): void {
     close();
@@ -121,6 +129,26 @@ export function GenomicContextMenu(): React.ReactElement | null {
     runExtendRegions(targets, upstream, downstream, isBed);
   }
 
+  function handleFilterByFilter(): void {
+    close();
+    setShowFilterDialog(true);
+  }
+
+  function handleFilterConfirm(keepValues: Set<string>): void {
+    setShowFilterDialog(false);
+    runFilterByFilter(keepValues);
+  }
+
+  function handleFilterByQual(): void {
+    close();
+    setShowQualDialog(true);
+  }
+
+  function handleQualConfirm(minQual: number): void {
+    setShowQualDialog(false);
+    runFilterByQual(minQual);
+  }
+
   function handleDeleteRows(): void {
     close();
     deleteRows(selectedRowIndices);
@@ -139,7 +167,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   }
 
   const menuWidth = 280;
-  const menuHeight = 460;
+  const menuHeight = isVcf ? 380 : 460;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
@@ -151,6 +179,16 @@ export function GenomicContextMenu(): React.ReactElement | null {
         onCancel={() => setShowSlopDialog(false)}
         regionCount={selectedRows.length > 0 ? selectedRows.length : rows.length}
       />
+      <FilterColumnDialog
+        visible={showFilterDialog}
+        onConfirm={handleFilterConfirm}
+        onCancel={() => setShowFilterDialog(false)}
+      />
+      <QualFilterDialog
+        visible={showQualDialog}
+        onConfirm={handleQualConfirm}
+        onCancel={() => setShowQualDialog(false)}
+      />
 
       {visible && (
         <div
@@ -158,7 +196,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
           className="glass animate-slide-in fixed z-50 min-w-[270px] rounded-xl py-1.5 shadow-2xl shadow-black/60"
           style={{ left: adjustedX, top: adjustedY }}
         >
-          {/* Ensembl API */}
+          {/* ── Ensembl API Section ── */}
           <SectionLabel text="Ensembl API" />
 
           <MenuItem
@@ -168,20 +206,27 @@ export function GenomicContextMenu(): React.ReactElement | null {
             onClick={handleLiftOver}
             disabled={isRunning || selectedRows.length === 0}
           />
-          <MenuItem
-            label="Annotate Gene Names"
-            sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All → name column"}
-            icon={<IconDNA />}
-            onClick={handleAnnotateGenes}
-            disabled={isRunning}
-          />
-          <MenuItem
-            label="Calculate GC Content"
-            sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
-            icon={<IconChart />}
-            onClick={handleGCContent}
-            disabled={isRunning || selectedRows.length === 0}
-          />
+
+          {isBed && (
+            <MenuItem
+              label="Annotate Gene Names"
+              sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All → name column"}
+              icon={<IconDNA />}
+              onClick={handleAnnotateGenes}
+              disabled={isRunning}
+            />
+          )}
+
+          {isBed && (
+            <MenuItem
+              label="Calculate GC Content"
+              sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
+              icon={<IconChart />}
+              onClick={handleGCContent}
+              disabled={isRunning || selectedRows.length === 0}
+            />
+          )}
+
           <MenuItem
             label="Clean Intergenic"
             sublabel={isBed ? "All rows" : "Selected"}
@@ -192,7 +237,31 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
           <Divider />
 
-          {/* BED Ops */}
+          {/* ── VCF Filter Section ── */}
+          {isVcf && (
+            <>
+              <SectionLabel text="VCF Filter" />
+
+              <MenuItem
+                label="Filter by FILTER"
+                sublabel="PASS, LowQual, etc."
+                icon={<IconFilterColumn />}
+                onClick={handleFilterByFilter}
+                disabled={rows.length === 0}
+              />
+              <MenuItem
+                label="Filter by QUAL"
+                sublabel="Min quality threshold"
+                icon={<IconQual />}
+                onClick={handleFilterByQual}
+                disabled={rows.length === 0}
+              />
+
+              <Divider />
+            </>
+          )}
+
+          {/* ── Transform Section ── */}
           <SectionLabel text="Transform" />
 
           <MenuItem
@@ -209,6 +278,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
             onClick={handleRemoveDuplicates}
             disabled={rows.length === 0}
           />
+
           {isBed && (
             <MenuItem
               label="Merge Overlapping"
@@ -218,17 +288,20 @@ export function GenomicContextMenu(): React.ReactElement | null {
               disabled={rows.length === 0}
             />
           )}
-          <MenuItem
-            label="Extend / Slop"
-            sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All rows"}
-            icon={<IconExtend />}
-            onClick={handleExtendRegions}
-            disabled={rows.length === 0}
-          />
+
+          {isBed && (
+            <MenuItem
+              label="Extend / Slop"
+              sublabel={selectedRows.length > 0 ? `${selectedRows.length} selected` : "All rows"}
+              icon={<IconExtend />}
+              onClick={handleExtendRegions}
+              disabled={rows.length === 0}
+            />
+          )}
 
           <Divider />
 
-          {/* Edit */}
+          {/* ── Edit Section ── */}
           <MenuItem
             label="Delete Selected"
             sublabel={`${selectedRows.length} row${selectedRows.length !== 1 ? "s" : ""}`}
@@ -329,6 +402,22 @@ function IconFilter(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="1.5">
       <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconFilterColumn(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
+      <path d="M3 6h18M7 12h10M10 18h4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconQual(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -10,7 +10,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 | `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal |
 | `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
 | `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
-| `operations/` | `SlopDialog.tsx` | Extend/Slop parameter dialog with custom toggle, preset buttons, glass morphism |
+| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx` | Operation parameter dialogs: slop, VCF FILTER picker, VCF QUAL threshold |
 
 ## Component Rules
 
@@ -54,11 +54,27 @@ React components organized by feature area. All styled with the "Genomic Instrum
 
 ### GenomicContextMenu
 - `.glass` surface with `.animate-slide-in` entry animation
-- Section labels: 9px uppercase tracking-[0.15em] ghost text ("Ensembl API", "Transform")
+- Section labels: 9px uppercase tracking-[0.15em] muted text ("Ensembl API", "VCF Filter", "Transform")
 - Menu items: 14×14 colored SVG icons, 13px labels, 10px mono sublabels
 - Viewport-aware positioning (flips to stay in bounds)
-- Sections: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend) → Edit (Delete, Copy)
+- **File-type-aware menu**: shows different operations for BED vs VCF
+  - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend) → Edit
+  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER column, by QUAL score) → Transform (Sort, Dedup) → Edit
 - `useContextMenuStore`: Zustand store for visibility + position
+
+### FilterColumnDialog (VCF)
+- Glass morphism modal with electric (#4361ee) accent
+- Shows unique FILTER values as checkboxes (`.genomic-checkbox`) with row counts
+- Quick actions: "Select All", "PASS Only"
+- Summary bar: "Keeping X of Y rows"
+- CTA: electric-colored "Apply Filter" button
+
+### QualFilterDialog (VCF)
+- Glass morphism modal with amber (#f59e0b) accent
+- Stats bar: min/median/max QUAL from current data
+- Number input with presets: Q10, Q20, Q30, Q40, Q60
+- Note: rows with QUAL="." are always kept
+- CTA: amber-colored "Apply Filter" button
 
 ### SlopDialog
 - Glass morphism modal with black/70 backdrop

@@ -15,6 +15,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `remove-duplicates.ts` | Remove rows with duplicate chrom:start:end. Keeps first | Client |
 | `merge-regions.ts` | Merge overlapping/adjacent BED regions. Like `bedtools merge` | Client |
 | `extend-regions.ts` | Extend/Slop regions N bases upstream/downstream. Strand-aware | Client |
+| `filter-vcf.ts` | VCF-specific: filter by FILTER column values, filter by QUAL threshold, stats helpers | Client |
 
 ## API Operation Pattern
 
@@ -28,12 +29,14 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 
 ## Client-Side Operations (No API)
 
-Sort, Remove Duplicates, Merge, and Extend/Slop run entirely in the browser:
+Sort, Remove Duplicates, Merge, Extend/Slop, and VCF filters run entirely in the browser:
 - No `useOperationStore` progress tracking — they complete instantly.
 - Push to undo history before modifying, so Ctrl+Z works.
 - Merge reduces to BED3 format (name/score/strand cannot be meaningfully merged).
 - Extend/Slop is strand-aware: minus strand reverses upstream/downstream.
 - Sort uses natural chromosome ordering: numeric chromosomes by value, then X=23, Y=24, M=25.
+- VCF FILTER: shows unique values with counts, user selects which to keep. Uses `deleteRows`.
+- VCF QUAL: threshold-based, rows with QUAL="." (missing) are always kept.
 
 ## Concurrency & Rate Limiting
 
