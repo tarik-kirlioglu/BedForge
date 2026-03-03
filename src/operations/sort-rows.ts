@@ -1,29 +1,8 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import { chromRank } from "../utils/chromosome";
 import type { GenomicRow } from "../types/genomic";
-
-/**
- * Natural chromosome ordering:
- * chr1, chr2, ... chr9, chr10, ... chr22, chrX, chrY, chrM
- */
-const CHROM_ORDER: Record<string, number> = {};
-for (let i = 1; i <= 22; i++) {
-  CHROM_ORDER[String(i)] = i;
-  CHROM_ORDER[`chr${i}`] = i;
-}
-CHROM_ORDER["X"] = 23;
-CHROM_ORDER["chrX"] = 23;
-CHROM_ORDER["Y"] = 24;
-CHROM_ORDER["chrY"] = 24;
-CHROM_ORDER["M"] = 25;
-CHROM_ORDER["chrM"] = 25;
-CHROM_ORDER["MT"] = 25;
-CHROM_ORDER["chrMT"] = 25;
-
-function chromRank(chrom: string): number {
-  return CHROM_ORDER[chrom] ?? 99;
-}
 
 function compareRows(a: GenomicRow, b: GenomicRow, isBed: boolean): number {
   const chromA = String(a.chrom ?? a.CHROM ?? "");

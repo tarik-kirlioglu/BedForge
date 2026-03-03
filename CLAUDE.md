@@ -45,9 +45,11 @@ src/
 │   ├── drop-zone/            # Hero landing + drag & drop
 │   ├── table/                # DataGrid, EditableCell
 │   ├── context-menu/         # Right-click genomic menu + SVG icons
-│   └── operations/           # SlopDialog (extend/slop parameter input)
+│   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog
+│   ├── search/               # SearchBar (Ctrl+F floating search)
+│   └── stats/                # StatsPanel, ChromDistribution, SizeDistribution
 ├── hooks/                    # useKeyboardShortcuts
-└── utils/                    # chromosome.ts, gc-calculator.ts
+└── utils/                    # chromosome.ts, gc-calculator.ts, column-stats.ts, chrom-sizes.ts
 ```
 
 ## Design System — "Genomic Instrument"
@@ -154,6 +156,19 @@ src/
 5. **File size**: Warning for >50MB files.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
-8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop. VCF files get Filter by FILTER column, Filter by QUAL score. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Delete, Copy.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, UCSC Link, IGV Batch, Delete, Copy.
 9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
 10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
+11. **Search (Ctrl+F)**: Floating search bar, 300ms debounce, searches all visible columns. Matches highlighted in `<mark>` tags. Navigate with Enter/Shift+Enter.
+12. **Find & Replace (Ctrl+H)**: Dialog with scope (all/selected/column), case-sensitive toggle, preview (50 matches). Numeric column validation.
+13. **Add Row**: Context menu → Edit → Add Row. Inserts after selection or appends. Default values: `.` for strings, `0` for numbers.
+14. **Variant Type Filter**: Classifies variants as SNP/INDEL/MNP/MIXED/OTHER. Multi-allelic ALT detection. Quick actions: SNP Only, INDEL Only.
+15. **Genotype Filter**: Parses GT from FORMAT/sample fields. Phase normalization (0|1 → 0/1). Quick actions: Het Only, Hom Alt Only, No Missing.
+16. **INFO Field Parser**: Scans INFO column, extracts key=value pairs to `INFO_*` columns. Flags → 1/0. VCF exporter excludes `INFO_*` columns.
+17. **Statistics Panel**: Toggle via toolbar button. Column stats (numeric/categorical), chromosome distribution (horizontal bars), region size distribution (log-scale histogram, BED only).
+18. **Validate Coordinates (BED)**: Checks swapped start/end, negative coords, zero-length, invalid chrom, duplicates. Auto-fix for swapped/negative/duplicate.
+19. **Intersect / Subtract (BED)**: Load second BED file, binary search overlap detection O(N log M). Intersect (keep overlapping) or Subtract (remove overlapping).
+20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
+21. **UCSC Genome Browser**: Opens selected regions in UCSC. Single region: direct link. Multiple: bounding region + 10% padding.
+22. **IGV Batch Script**: Downloads `igv_batch.bat` with goto/snapshot commands for selected regions.
+23. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.

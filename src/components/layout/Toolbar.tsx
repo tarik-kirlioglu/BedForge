@@ -9,7 +9,13 @@ import { exportVcf } from "../../exporters/vcf-exporter";
 import { downloadFile } from "../../exporters/download";
 import type { BedFormat } from "../../types/bed";
 
-export function Toolbar(): React.ReactElement {
+interface ToolbarProps {
+  showStats: boolean;
+  onToggleStats: () => void;
+}
+
+export function Toolbar(props: ToolbarProps): React.ReactElement {
+  const { showStats, onToggleStats } = props;
   const fileName = useFileStore((s) => s.fileName);
   const fileFormat = useFileStore((s) => s.fileFormat);
   const assembly = useFileStore((s) => s.assembly);
@@ -126,6 +132,23 @@ export function Toolbar(): React.ReactElement {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
+        {/* Stats toggle */}
+        <button
+          onClick={onToggleStats}
+          className={`rounded-lg p-2 transition-colors ${
+            showStats
+              ? "bg-cyan-glow/10 text-cyan-glow"
+              : "text-text-secondary hover:bg-raised hover:text-text-primary"
+          }`}
+          title="Toggle statistics panel"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 20V10M12 20V4M6 20v-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        <div className="mx-1.5 h-4 w-px bg-elevated" />
+
         {/* Undo */}
         <button
           onClick={undo}

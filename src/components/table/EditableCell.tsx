@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 import { useFileStore } from "../../stores/useFileStore";
 import { useSelectionStore } from "../../stores/useSelectionStore";
+import { useSearchStore } from "../../stores/useSearchStore";
 
 interface EditableCellProps {
   rowIndex: number;
@@ -19,6 +20,7 @@ export function EditableCell(props: EditableCellProps): React.ReactElement {
   const updateCell = useFileStore((s) => s.updateCell);
   const activeCell = useSelectionStore((s) => s.activeCell);
   const setActiveCell = useSelectionStore((s) => s.setActiveCell);
+  const searchQuery = useSearchStore((s) => s.query);
 
   const isEditing =
     activeCell?.rowIndex === rowIndex && activeCell?.colKey === colKey;
@@ -80,6 +82,8 @@ export function EditableCell(props: EditableCellProps): React.ReactElement {
   const isCoord = colKey === "chromStart" || colKey === "chromEnd" || colKey === "POS";
   const isGC = colKey === "gc_content";
 
+  const highlighted = highlightMatch(value, searchQuery);
+
   return (
     <span
       className={`block w-full cursor-text truncate transition-colors ${
@@ -94,7 +98,23 @@ export function EditableCell(props: EditableCellProps): React.ReactElement {
       onDoubleClick={handleDoubleClick}
       title={value}
     >
-      {value}
+      {highlighted}
     </span>
+  );
+}
+
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const lower = text.toLowerCase();
+  const qLower = query.toLowerCase();
+  const idx = lower.indexOf(qLower);
+  if (idx === -1) return text;
+
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="rounded-sm bg-nt-g/25 px-px text-inherit">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
   );
 }

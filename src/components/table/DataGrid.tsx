@@ -1,4 +1,4 @@
-import { useMemo, useRef, useCallback } from "react";
+import { useMemo, useRef, useCallback, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,6 +14,7 @@ import { useState } from "react";
 
 import { useFileStore } from "../../stores/useFileStore";
 import { useSelectionStore } from "../../stores/useSelectionStore";
+import { useSearchStore } from "../../stores/useSearchStore";
 import { useContextMenuStore } from "../context-menu/GenomicContextMenu";
 import { EditableCell } from "./EditableCell";
 import type { GenomicRow } from "../../types/genomic";
@@ -27,6 +28,8 @@ export function DataGrid(): React.ReactElement {
   const toggleRow = useSelectionStore((s) => s.toggleRow);
   const setSelectedRows = useSelectionStore((s) => s.setSelectedRows);
   const openContextMenu = useContextMenuStore((s) => s.open);
+  const searchMatchIndices = useSearchStore((s) => s.matchIndices);
+  const searchCurrentMatch = useSearchStore((s) => s.currentMatchIndex);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -103,6 +106,24 @@ export function DataGrid(): React.ReactElement {
     estimateSize: () => ROW_HEIGHT,
     overscan: 15,
   });
+
+  // Scroll to current search match
+  useEffect(() => {
+    if (searchCurrentMatch >= 0 && searchMatchIndices.length > 0) {
+      const targetRowIndex = searchMatchIndices[searchCurrentMatch];
+      if (targetRowIndex !== undefined) {
+        virtualizer.scrollToIndex(targetRowIndex, { align: "center" });
+      }
+    }
+  }, [searchCurrentMatch, searchMatchIndices, virtualizer]);
+
+  // Build a set of matching row indices for highlight
+  const searchMatchSet = useMemo(
+    () => new Set(searchMatchIndices),
+    [searchMatchIndices],
+  );
+  const activeMatchRowIndex =
+    searchCurrentMatch >= 0 ? searchMatchIndices[searchCurrentMatch] : undefined;
 
   const handleRowClick = useCallback(
     (e: React.MouseEvent, rowIndex: number) => {
@@ -189,14 +210,21 @@ export function DataGrid(): React.ReactElement {
               if (!row) return null;
               const isSelected = selectedRowIndices.has(row.original._index);
 
+              const isActiveMatch = activeMatchRowIndex === virtualRow.index;
+              const isMatch = searchMatchSet.has(virtualRow.index);
+
               return (
                 <tr
                   key={row.id}
                   data-index={virtualRow.index}
                   className={`group border-b transition-colors ${
-                    isSelected
-                      ? "border-cyan-glow/10 bg-cyan-glow/[0.06]"
-                      : "border-elevated/30 hover:bg-surface/60"
+                    isActiveMatch
+                      ? "border-nt-g/20 bg-nt-g/[0.15]"
+                      : isMatch
+                        ? "border-cyan-glow/10 bg-cyan-glow/[0.04]"
+                        : isSelected
+                          ? "border-cyan-glow/10 bg-cyan-glow/[0.06]"
+                          : "border-elevated/30 hover:bg-surface/60"
                   }`}
                   onClick={(e) => handleRowClick(e, virtualRow.index)}
                   onContextMenu={(e) => handleContextMenu(e, row.original._index)}

@@ -6,9 +6,10 @@ Zustand stores for application state management.
 
 | File | Purpose |
 |------|---------|
-| `useFileStore.ts` | Central store: rows, file metadata, format, assembly, useChrPrefix, undo/redo history, VCF meta. Actions: loadFile, updateCell, deleteRows, updateRows, addColumn, undo, redo, reset |
+| `useFileStore.ts` | Central store: rows, file metadata, format, assembly, useChrPrefix, undo/redo history, VCF meta. Actions: loadFile, updateCell, deleteRows, updateRows, addColumn, addRow, undo, redo, reset |
 | `useSelectionStore.ts` | Row/cell selection: `selectedRowIndices` (Set), `activeCell`, toggle/range/selectAll/clear |
 | `useOperationStore.ts` | Running operation state: isRunning, operationName, progress {completed, total}, isCancelled |
+| `useSearchStore.ts` | Search/Find state: isOpen, query, matchIndices, currentMatchIndex. Actions: open, close, setQuery, setMatches, nextMatch, prevMatch |
 
 ## Rules
 

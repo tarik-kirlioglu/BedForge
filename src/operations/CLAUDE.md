@@ -16,6 +16,15 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `merge-regions.ts` | Merge overlapping/adjacent BED regions. Like `bedtools merge` | Client |
 | `extend-regions.ts` | Extend/Slop regions N bases upstream/downstream. Strand-aware | Client |
 | `filter-vcf.ts` | VCF-specific: filter by FILTER column values, filter by QUAL threshold, stats helpers | Client |
+| `variant-type-filter.ts` | Classify variants (SNP/INDEL/MNP/MIXED/OTHER), filter by type | Client |
+| `genotype-filter.ts` | Parse GT field from FORMAT/sample, filter by genotype (0/0, 0/1, 1/1, ./.) | Client |
+| `info-parser.ts` | Scan INFO fields, extract key=value pairs to `INFO_*` columns | Client |
+| `find-replace.ts` | Find & replace across rows with scope, case-sensitivity, numeric validation | Client |
+| `validate-coordinates.ts` | Validate BED coordinates (swapped, negative, zero-length, invalid chrom, duplicates) | Client |
+| `intersect.ts` | Intersect/Subtract with another BED file using binary search overlap detection | Client |
+| `complement.ts` | Compute complement (gap) regions given chromosome sizes | Client |
+| `ucsc-link.ts` | Open selected regions in UCSC Genome Browser | Client |
+| `igv-batch.ts` | Generate and download IGV batch script for selected regions | Client |
 
 ## API Operation Pattern
 
@@ -29,14 +38,23 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 
 ## Client-Side Operations (No API)
 
-Sort, Remove Duplicates, Merge, Extend/Slop, and VCF filters run entirely in the browser:
+Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run entirely in the browser:
 - No `useOperationStore` progress tracking — they complete instantly.
 - Push to undo history before modifying, so Ctrl+Z works.
 - Merge reduces to BED3 format (name/score/strand cannot be meaningfully merged).
 - Extend/Slop is strand-aware: minus strand reverses upstream/downstream.
-- Sort uses natural chromosome ordering: numeric chromosomes by value, then X=23, Y=24, M=25.
+- Sort uses shared `chromRank()` from `utils/chromosome.ts`: numeric chromosomes by value, then X=23, Y=24, M=25.
 - VCF FILTER: shows unique values with counts, user selects which to keep. Uses `deleteRows`.
 - VCF QUAL: threshold-based, rows with QUAL="." (missing) are always kept.
+- Variant Type: classifies by REF/ALT length comparison. Multi-allelic → MIXED.
+- Genotype: parses GT from FORMAT field, normalizes phased (|) to unphased (/).
+- INFO Parser: scans `;`-separated key=value pairs, creates `INFO_*` columns. Flags → 1/0.
+- Find & Replace: supports scope (all/selected/column), case-sensitive, numeric validation.
+- Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
+- Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
+- Complement: gap regions from sorted intervals + chrom sizes. REPLACES all rows (BED3).
+- UCSC Link: opens `genome.ucsc.edu` in new tab. Single or bounding region.
+- IGV Batch: downloads `igv_batch.bat` with goto/snapshot commands.
 
 ## Concurrency & Rate Limiting
 

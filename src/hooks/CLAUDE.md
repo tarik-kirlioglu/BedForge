@@ -6,7 +6,7 @@ Custom React hooks for reusable UI logic.
 
 | File | Purpose |
 |------|---------|
-| `useKeyboardShortcuts.ts` | Global keyboard shortcuts: Ctrl+Z undo, Ctrl+Shift+Z/Ctrl+Y redo, Ctrl+A select all, Delete/Backspace remove rows, Escape clear selection |
+| `useKeyboardShortcuts.ts` | Global keyboard shortcuts: Ctrl+Z undo, Ctrl+Shift+Z/Ctrl+Y redo, Ctrl+A select all, Delete/Backspace remove rows, Escape clear selection, Ctrl+F open search, Ctrl+H open find & replace |
 
 ## Notes
 

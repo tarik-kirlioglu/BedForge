@@ -10,14 +10,17 @@ export function exportVcf(
 ): string {
   const lines: string[] = [];
 
+  // Filter out INFO_* columns (created by Parse INFO feature)
+  const filteredColumns = headerColumns.filter((c) => !c.startsWith("INFO_"));
+
   // Meta lines (## headers) preserved verbatim
   for (const m of meta) {
     lines.push(m.raw);
   }
 
   // Column header line
-  if (headerColumns.length > 0) {
-    lines.push("#" + headerColumns.join("\t"));
+  if (filteredColumns.length > 0) {
+    lines.push("#" + filteredColumns.join("\t"));
   }
 
   // Data rows

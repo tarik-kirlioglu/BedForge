@@ -34,6 +34,7 @@ interface FileState {
   deleteRows: (indices: Set<number>) => void;
   updateRows: (updates: Array<{ index: number; row: Partial<GenomicRow> }>) => void;
   addColumn: (name: string, values: Map<number, string>) => void;
+  addRow: (afterIndex?: number) => void;
   undo: () => void;
   redo: () => void;
   reset: () => void;
@@ -105,6 +106,44 @@ export const useFileStore = create<FileState>()(
           if (target) {
             Object.assign(target, row);
           }
+        }
+      }),
+
+    addRow: (afterIndex) =>
+      set((state) => {
+        pushHistory(state);
+        const maxIndex = state.rows.reduce((max, r) => Math.max(max, r._index), -1);
+        const newIndex = maxIndex + 1;
+        const newRow: GenomicRow = {
+          _index: newIndex,
+          _rowId: `new-row-${Date.now()}`,
+        };
+
+        const isVcf = state.fileFormat === "vcf";
+        for (const col of state.columns) {
+          if (isVcf) {
+            newRow[col] = col === "POS" ? 0 : ".";
+          } else {
+            if (col === "chromStart" || col === "chromEnd" || col === "score" ||
+                col === "thickStart" || col === "thickEnd" || col === "blockCount") {
+              newRow[col] = 0;
+            } else if (col === "chrom") {
+              newRow[col] = ".";
+            } else {
+              newRow[col] = ".";
+            }
+          }
+        }
+
+        if (afterIndex !== undefined) {
+          const pos = state.rows.findIndex((r) => r._index === afterIndex);
+          if (pos !== -1) {
+            state.rows.splice(pos + 1, 0, newRow);
+          } else {
+            state.rows.push(newRow);
+          }
+        } else {
+          state.rows.push(newRow);
         }
       }),
 

@@ -16,6 +16,14 @@ import { runFilterByFilter, runFilterByQual } from "../../operations/filter-vcf"
 import { SlopDialog } from "../operations/SlopDialog";
 import { FilterColumnDialog } from "../operations/FilterColumnDialog";
 import { QualFilterDialog } from "../operations/QualFilterDialog";
+import { VariantTypeDialog } from "../operations/VariantTypeDialog";
+import { GenotypeFilterDialog } from "../operations/GenotypeFilterDialog";
+import { InfoParserDialog } from "../operations/InfoParserDialog";
+import { ValidationDialog } from "../operations/ValidationDialog";
+import { IntersectDialog } from "../operations/IntersectDialog";
+import { ComplementDialog } from "../operations/ComplementDialog";
+import { openInUCSC } from "../../operations/ucsc-link";
+import { downloadIGVBatch } from "../../operations/igv-batch";
 
 interface ContextMenuState {
   visible: boolean;
@@ -40,13 +48,21 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const rows = useFileStore((s) => s.rows);
   const useChrPrefix = useFileStore((s) => s.useChrPrefix);
   const deleteRows = useFileStore((s) => s.deleteRows);
+  const addRow = useFileStore((s) => s.addRow);
   const selectedRowIndices = useSelectionStore((s) => s.selectedRowIndices);
   const clearSelection = useSelectionStore((s) => s.clearSelection);
   const isRunning = useOperationStore((s) => s.isRunning);
   const menuRef = useRef<HTMLDivElement>(null);
+  const vcfSampleNames = useFileStore((s) => s.vcfSampleNames);
   const [showSlopDialog, setShowSlopDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showQualDialog, setShowQualDialog] = useState(false);
+  const [showVariantTypeDialog, setShowVariantTypeDialog] = useState(false);
+  const [showGenotypeDialog, setShowGenotypeDialog] = useState(false);
+  const [showInfoParserDialog, setShowInfoParserDialog] = useState(false);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [showIntersectDialog, setShowIntersectDialog] = useState(false);
+  const [showComplementDialog, setShowComplementDialog] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -149,6 +165,54 @@ export function GenomicContextMenu(): React.ReactElement | null {
     runFilterByQual(minQual);
   }
 
+  function handleVariantTypeFilter(): void {
+    close();
+    setShowVariantTypeDialog(true);
+  }
+
+  function handleGenotypeFilter(): void {
+    close();
+    setShowGenotypeDialog(true);
+  }
+
+  function handleParseInfo(): void {
+    close();
+    setShowInfoParserDialog(true);
+  }
+
+  function handleValidate(): void {
+    close();
+    setShowValidationDialog(true);
+  }
+
+  function handleIntersect(): void {
+    close();
+    setShowIntersectDialog(true);
+  }
+
+  function handleComplement(): void {
+    close();
+    setShowComplementDialog(true);
+  }
+
+  function handleUCSCLink(): void {
+    close();
+    openInUCSC(selectedRows, assembly, isBed);
+  }
+
+  function handleIGVBatch(): void {
+    close();
+    downloadIGVBatch(selectedRows, isBed);
+  }
+
+  function handleAddRow(): void {
+    close();
+    const lastSelected = selectedRows.length > 0
+      ? selectedRows[selectedRows.length - 1]!._index
+      : undefined;
+    addRow(lastSelected);
+  }
+
   function handleDeleteRows(): void {
     close();
     deleteRows(selectedRowIndices);
@@ -167,7 +231,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   }
 
   const menuWidth = 280;
-  const menuHeight = isVcf ? 380 : 460;
+  const menuHeight = isVcf ? 560 : 700;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
@@ -188,6 +252,30 @@ export function GenomicContextMenu(): React.ReactElement | null {
         visible={showQualDialog}
         onConfirm={handleQualConfirm}
         onCancel={() => setShowQualDialog(false)}
+      />
+      <VariantTypeDialog
+        visible={showVariantTypeDialog}
+        onClose={() => setShowVariantTypeDialog(false)}
+      />
+      <GenotypeFilterDialog
+        visible={showGenotypeDialog}
+        onClose={() => setShowGenotypeDialog(false)}
+      />
+      <InfoParserDialog
+        visible={showInfoParserDialog}
+        onClose={() => setShowInfoParserDialog(false)}
+      />
+      <ValidationDialog
+        visible={showValidationDialog}
+        onClose={() => setShowValidationDialog(false)}
+      />
+      <IntersectDialog
+        visible={showIntersectDialog}
+        onClose={() => setShowIntersectDialog(false)}
+      />
+      <ComplementDialog
+        visible={showComplementDialog}
+        onClose={() => setShowComplementDialog(false)}
       />
 
       {visible && (
@@ -256,6 +344,29 @@ export function GenomicContextMenu(): React.ReactElement | null {
                 onClick={handleFilterByQual}
                 disabled={rows.length === 0}
               />
+              <MenuItem
+                label="Filter by Variant Type"
+                sublabel="SNP, INDEL, MNP"
+                icon={<IconVariantType />}
+                onClick={handleVariantTypeFilter}
+                disabled={rows.length === 0}
+              />
+              {vcfSampleNames.length > 0 && (
+                <MenuItem
+                  label="Filter by Genotype"
+                  sublabel={vcfSampleNames[0] ?? "GT field"}
+                  icon={<IconGenotype />}
+                  onClick={handleGenotypeFilter}
+                  disabled={rows.length === 0}
+                />
+              )}
+              <MenuItem
+                label="Parse INFO Fields"
+                sublabel="Extract to columns"
+                icon={<IconInfo />}
+                onClick={handleParseInfo}
+                disabled={rows.length === 0}
+              />
 
               <Divider />
             </>
@@ -299,9 +410,62 @@ export function GenomicContextMenu(): React.ReactElement | null {
             />
           )}
 
+          {isBed && (
+            <MenuItem
+              label="Validate Coordinates"
+              sublabel="Check & fix issues"
+              icon={<IconValidate />}
+              onClick={handleValidate}
+              disabled={rows.length === 0}
+            />
+          )}
+
+          {isBed && (
+            <MenuItem
+              label="Intersect / Subtract"
+              sublabel="With another BED"
+              icon={<IconIntersect />}
+              onClick={handleIntersect}
+              disabled={rows.length === 0}
+            />
+          )}
+
+          {isBed && (
+            <MenuItem
+              label="Complement"
+              sublabel="Gap regions"
+              icon={<IconComplement />}
+              onClick={handleComplement}
+              disabled={rows.length === 0}
+            />
+          )}
+
           <Divider />
 
           {/* ── Edit Section ── */}
+          <SectionLabel text="Edit" />
+
+          <MenuItem
+            label="Add Row"
+            sublabel={selectedRows.length > 0 ? "After selection" : "Append to end"}
+            icon={<IconAddRow />}
+            onClick={handleAddRow}
+          />
+          <MenuItem
+            label="Open in UCSC"
+            sublabel={selectedRows.length > 0 ? `${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}` : "Select rows first"}
+            icon={<IconUCSC />}
+            onClick={handleUCSCLink}
+            disabled={selectedRows.length === 0}
+          />
+          <MenuItem
+            label="IGV Batch Script"
+            sublabel={selectedRows.length > 0 ? `${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}` : "Select rows first"}
+            icon={<IconIGV />}
+            onClick={handleIGVBatch}
+            disabled={selectedRows.length === 0}
+          />
+
           <MenuItem
             label="Delete Selected"
             sublabel={`${selectedRows.length} row${selectedRows.length !== 1 ? "s" : ""}`}
@@ -422,6 +586,32 @@ function IconQual(): React.ReactElement {
   );
 }
 
+function IconVariantType(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
+      <path d="M4 7h16M4 12h10M4 17h6" strokeLinecap="round" />
+      <circle cx="19" cy="14" r="3" />
+    </svg>
+  );
+}
+
+function IconGenotype(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
+      <path d="M12 2v10M8 6l8 0M6 12c0 5.5 6 10 6 10s6-4.5 6-10" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconInfo(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IconSort(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -459,6 +649,57 @@ function IconDelete(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconValidate(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M22 11.08V12a10 10 0 11-5.93-9.14M22 4L12 14.01l-3-3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconIntersect(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="9" cy="12" r="6" />
+      <circle cx="15" cy="12" r="6" />
+    </svg>
+  );
+}
+
+function IconComplement(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="3" y="8" width="18" height="8" rx="1" />
+      <path d="M8 8v8M16 8v8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconUCSC(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconIGV(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconAddRow(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

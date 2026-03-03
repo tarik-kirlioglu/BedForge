@@ -10,7 +10,9 @@ React components organized by feature area. All styled with the "Genomic Instrum
 | `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal |
 | `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
 | `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
-| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx` | Operation parameter dialogs: slop, VCF FILTER picker, VCF QUAL threshold |
+| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx`, `VariantTypeDialog.tsx`, `GenotypeFilterDialog.tsx`, `InfoParserDialog.tsx`, `FindReplaceDialog.tsx`, `ValidationDialog.tsx`, `IntersectDialog.tsx`, `ComplementDialog.tsx` | Operation parameter dialogs |
+| `search/` | `SearchBar.tsx` | Floating Ctrl+F search bar with match counter and navigation |
+| `stats/` | `StatsPanel.tsx`, `ChromDistribution.tsx`, `SizeDistribution.tsx` | Statistics sidebar with column stats, chromosome distribution, and region size histogram |
 
 ## Component Rules
 
@@ -58,8 +60,8 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Menu items: 14×14 colored SVG icons, 13px labels, 10px mono sublabels
 - Viewport-aware positioning (flips to stay in bounds)
 - **File-type-aware menu**: shows different operations for BED vs VCF
-  - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend) → Edit
-  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER column, by QUAL score) → Transform (Sort, Dedup) → Edit
+  - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, UCSC, IGV, Delete, Copy)
+  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, IGV, Delete, Copy)
 - `useContextMenuStore`: Zustand store for visibility + position
 
 ### FilterColumnDialog (VCF)

@@ -2,9 +2,14 @@ import { useEffect } from "react";
 
 import { useFileStore } from "../stores/useFileStore";
 import { useSelectionStore } from "../stores/useSelectionStore";
+import { useSearchStore } from "../stores/useSearchStore";
+
+interface KeyboardShortcutOptions {
+  onOpenFindReplace?: () => void;
+}
 
 /** Global keyboard shortcuts for the application */
-export function useKeyboardShortcuts(): void {
+export function useKeyboardShortcuts(options?: KeyboardShortcutOptions): void {
   const undo = useFileStore((s) => s.undo);
   const redo = useFileStore((s) => s.redo);
   const rows = useFileStore((s) => s.rows);
@@ -12,14 +17,30 @@ export function useKeyboardShortcuts(): void {
   const selectedRowIndices = useSelectionStore((s) => s.selectedRowIndices);
   const clearSelection = useSelectionStore((s) => s.clearSelection);
   const selectAll = useSelectionStore((s) => s.selectAll);
+  const openSearch = useSearchStore((s) => s.open);
+  const searchIsOpen = useSearchStore((s) => s.isOpen);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
-      // Don't intercept when editing an input
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-
       const ctrl = e.ctrlKey || e.metaKey;
+
+      // Ctrl+F: open search (always, even from inputs)
+      if (ctrl && e.key === "f") {
+        e.preventDefault();
+        openSearch();
+        return;
+      }
+
+      // Ctrl+H: open find & replace
+      if (ctrl && e.key === "h") {
+        e.preventDefault();
+        options?.onOpenFindReplace?.();
+        return;
+      }
+
+      // Don't intercept other shortcuts when editing an input
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
 
       if (ctrl && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
@@ -46,5 +67,5 @@ export function useKeyboardShortcuts(): void {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, rows, deleteRows, selectedRowIndices, clearSelection, selectAll]);
+  }, [undo, redo, rows, deleteRows, selectedRowIndices, clearSelection, selectAll, openSearch, searchIsOpen, options]);
 }
