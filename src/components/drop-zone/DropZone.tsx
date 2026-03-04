@@ -122,6 +122,51 @@ export function DropZone(): React.ReactElement {
     if (file) processFile(file);
   }
 
+  function loadExample(path: string): void {
+    fetch(path)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then((content) => {
+        const fileName = path.split("/").pop() ?? "example";
+        const format = detectFormat(fileName, content);
+        if (!format) {
+          toast.error("Could not detect file format");
+          return;
+        }
+
+        if (format === "vcf") {
+          const result = parseVcf(content);
+          const firstChrom = String(result.rows[0]?.CHROM ?? "chr1");
+          pendingLoadRef.current = {
+            fileName,
+            fileFormat: "vcf",
+            rows: result.rows,
+            columns: result.columns,
+            vcfMeta: result.vcfFile.meta,
+            vcfSampleNames: result.vcfFile.sampleNames,
+            useChrPrefix: detectChrPrefix(firstChrom),
+          };
+        } else {
+          const result = parseBed(content);
+          const firstChrom = String(result.rows[0]?.chrom ?? "chr1");
+          pendingLoadRef.current = {
+            fileName,
+            fileFormat: result.format,
+            rows: result.rows,
+            columns: result.columns,
+            useChrPrefix: detectChrPrefix(firstChrom),
+          };
+        }
+
+        setShowAssemblyPicker(true);
+      })
+      .catch((err) => {
+        toast.error("Failed to load example", { description: String(err) });
+      });
+  }
+
   // ── Assembly Picker Screen ──
   if (showAssemblyPicker) {
     return (
@@ -271,8 +316,27 @@ export function DropZone(): React.ReactElement {
           </div>
         </button>
 
+        {/* ── Try Example ── */}
+        <div className="animate-fade-in-up mt-6 flex flex-col items-center gap-2.5">
+          <span className="text-[12px] text-text-muted">or try an example</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => loadExample("/samples/example.bed")}
+              className="rounded-lg border border-cyan-glow/15 bg-cyan-glow/5 px-3.5 py-1.5 font-mono text-[11px] font-medium text-cyan-glow/80 transition-colors hover:bg-cyan-glow/10 hover:text-cyan-glow"
+            >
+              BED Example
+            </button>
+            <button
+              onClick={() => loadExample("/samples/example.vcf")}
+              className="rounded-lg border border-electric/15 bg-electric/5 px-3.5 py-1.5 font-mono text-[11px] font-medium text-electric/80 transition-colors hover:bg-electric/10 hover:text-electric"
+            >
+              VCF Example
+            </button>
+          </div>
+        </div>
+
         {/* ── Feature Cards ── */}
-        <div className="animate-fade-in-up mt-14 grid w-[640px] grid-cols-3 gap-3">
+        <div className="animate-fade-in-up mt-10 grid w-[640px] grid-cols-3 gap-3">
           {[
             {
               icon: (
