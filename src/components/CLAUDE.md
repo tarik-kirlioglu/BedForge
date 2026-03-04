@@ -60,8 +60,8 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Menu items: 14×14 colored SVG icons, 13px labels, 10px mono sublabels
 - Viewport-aware positioning (flips to stay in bounds)
 - **File-type-aware menu**: shows different operations for BED vs VCF
-  - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, UCSC, IGV, Delete, Copy)
-  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, IGV, Delete, Copy)
+  - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, UCSC, Delete, Copy)
+  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
 - `useContextMenuStore`: Zustand store for visibility + position
 
 ### FilterColumnDialog (VCF)

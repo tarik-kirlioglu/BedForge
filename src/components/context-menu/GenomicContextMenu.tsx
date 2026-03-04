@@ -23,7 +23,6 @@ import { ValidationDialog } from "../operations/ValidationDialog";
 import { IntersectDialog } from "../operations/IntersectDialog";
 import { ComplementDialog } from "../operations/ComplementDialog";
 import { openInUCSC } from "../../operations/ucsc-link";
-import { downloadIGVBatch } from "../../operations/igv-batch";
 
 interface ContextMenuState {
   visible: boolean;
@@ -198,11 +197,6 @@ export function GenomicContextMenu(): React.ReactElement | null {
   function handleUCSCLink(): void {
     close();
     openInUCSC(selectedRows, assembly, isBed);
-  }
-
-  function handleIGVBatch(): void {
-    close();
-    downloadIGVBatch(selectedRows, isBed);
   }
 
   function handleAddRow(): void {
@@ -458,13 +452,6 @@ export function GenomicContextMenu(): React.ReactElement | null {
             onClick={handleUCSCLink}
             disabled={selectedRows.length === 0}
           />
-          <MenuItem
-            label="IGV Batch Script"
-            sublabel={selectedRows.length > 0 ? `${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}` : "Select rows first"}
-            icon={<IconIGV />}
-            onClick={handleIGVBatch}
-            disabled={selectedRows.length === 0}
-          />
 
           <MenuItem
             label="Delete Selected"
@@ -683,15 +670,6 @@ function IconUCSC(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
       <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconIGV(): React.ReactElement {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

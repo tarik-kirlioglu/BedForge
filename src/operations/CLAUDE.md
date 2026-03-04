@@ -24,7 +24,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `intersect.ts` | Intersect/Subtract with another BED file using binary search overlap detection | Client |
 | `complement.ts` | Compute complement (gap) regions given chromosome sizes | Client |
 | `ucsc-link.ts` | Open selected regions in UCSC Genome Browser | Client |
-| `igv-batch.ts` | Generate and download IGV batch script for selected regions | Client |
+
 
 ## API Operation Pattern
 
@@ -54,7 +54,6 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
 - Complement: gap regions from sorted intervals + chrom sizes. REPLACES all rows (BED3).
 - UCSC Link: opens `genome.ucsc.edu` in new tab. Single or bounding region.
-- IGV Batch: downloads `igv_batch.bat` with goto/snapshot commands.
 
 ## Concurrency & Rate Limiting
 

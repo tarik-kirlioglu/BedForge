@@ -156,7 +156,7 @@ src/
 5. **File size**: Warning for >50MB files.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
-8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, UCSC Link, IGV Batch, Delete, Copy.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, UCSC Link, Delete, Copy.
 9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
 10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
 11. **Search (Ctrl+F)**: Floating search bar, 300ms debounce, searches all visible columns. Matches highlighted in `<mark>` tags. Navigate with Enter/Shift+Enter.
@@ -170,5 +170,4 @@ src/
 19. **Intersect / Subtract (BED)**: Load second BED file, binary search overlap detection O(N log M). Intersect (keep overlapping) or Subtract (remove overlapping).
 20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
 21. **UCSC Genome Browser**: Opens selected regions in UCSC. Single region: direct link. Multiple: bounding region + 10% padding.
-22. **IGV Batch Script**: Downloads `igv_batch.bat` with goto/snapshot commands for selected regions.
-23. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.
+22. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.
