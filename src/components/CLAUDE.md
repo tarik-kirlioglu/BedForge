@@ -30,6 +30,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Full-screen hero with `.bg-grid` animated background and radial glow effects
 - Brand mark: "BedForge" with cyan-glow accent
 - Drop chamber: Dashed border area with `.glow-border` on drag-over, scale transition
+- "Try Example" buttons: BED Example (cyan-glow) + VCF Example (electric), fetches from `public/samples/`
 - 3 feature cards: LiftOver, Merge & Sort, Annotate
 - Assembly picker: Glass modal with GRCh37/GRCh38 buttons
 - Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.txt`, `.tsv`

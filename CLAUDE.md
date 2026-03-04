@@ -42,7 +42,7 @@ src/
 ├── operations/               # Genomic + BED operation orchestrators
 ├── components/
 │   ├── layout/               # AppShell, Toolbar
-│   ├── drop-zone/            # Hero landing + drag & drop
+│   ├── drop-zone/            # Hero landing + drag & drop + Try Example buttons
 │   ├── table/                # DataGrid, EditableCell
 │   ├── context-menu/         # Right-click genomic menu + SVG icons
 │   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog
