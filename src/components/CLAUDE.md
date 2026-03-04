@@ -10,7 +10,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 | `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal |
 | `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
 | `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
-| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx`, `VariantTypeDialog.tsx`, `GenotypeFilterDialog.tsx`, `InfoParserDialog.tsx`, `FindReplaceDialog.tsx`, `ValidationDialog.tsx`, `IntersectDialog.tsx`, `ComplementDialog.tsx` | Operation parameter dialogs |
+| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx`, `VariantTypeDialog.tsx`, `GenotypeFilterDialog.tsx`, `InfoParserDialog.tsx`, `InfoColumnFilterDialog.tsx`, `FindReplaceDialog.tsx`, `ValidationDialog.tsx`, `IntersectDialog.tsx`, `ComplementDialog.tsx` | Operation parameter dialogs |
 | `search/` | `SearchBar.tsx` | Floating Ctrl+F search bar with match counter and navigation |
 | `stats/` | `StatsPanel.tsx`, `ChromDistribution.tsx`, `SizeDistribution.tsx` | Statistics sidebar with column stats, chromosome distribution, and region size histogram |
 
@@ -61,7 +61,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Viewport-aware positioning (flips to stay in bounds)
 - **File-type-aware menu**: shows different operations for BED vs VCF
   - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, UCSC, Delete, Copy)
-  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
+  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO, Filter by INFO Column) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
 - `useContextMenuStore`: Zustand store for visibility + position
 
 ### FilterColumnDialog (VCF)
@@ -77,6 +77,17 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Number input with presets: Q10, Q20, Q30, Q40, Q60
 - Note: rows with QUAL="." are always kept
 - CTA: amber-colored "Apply Filter" button
+
+### InfoColumnFilterDialog (VCF)
+- Glass morphism modal with nt-c blue (#3b82f6) accent
+- Column picker dropdown for INFO_* columns
+- Auto-detects numeric vs categorical column type (≥80% parseable → numeric)
+- Numeric mode: stats bar (min/median/max), operator buttons (≥, ≤, =, ≠), threshold input
+- Categorical mode: quick actions (Select All, Deselect All, Invert), scrollable checklist with counts + percentage bars
+- "Keep missing values (.)" checkbox with missing count
+- Real-time preview: "Keeping X of Y rows"
+- CTA: nt-c blue "Apply Filter" button
+- Only shown in context menu when INFO_* columns exist (after Parse INFO Fields)
 
 ### SlopDialog
 - Glass morphism modal with black/70 backdrop

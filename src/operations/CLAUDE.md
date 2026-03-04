@@ -19,6 +19,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `variant-type-filter.ts` | Classify variants (SNP/INDEL/MNP/MIXED/OTHER), filter by type | Client |
 | `genotype-filter.ts` | Parse GT field from FORMAT/sample, filter by genotype (0/0, 0/1, 1/1, ./.) | Client |
 | `info-parser.ts` | Scan INFO fields, extract key=value pairs to `INFO_*` columns | Client |
+| `info-column-filter.ts` | Filter rows by parsed `INFO_*` column values (numeric threshold or categorical selection) | Client |
 | `find-replace.ts` | Find & replace across rows with scope, case-sensitivity, numeric validation | Client |
 | `validate-coordinates.ts` | Validate BED coordinates (swapped, negative, zero-length, invalid chrom, duplicates) | Client |
 | `intersect.ts` | Intersect/Subtract with another BED file using binary search overlap detection | Client |
@@ -49,6 +50,7 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Variant Type: classifies by REF/ALT length comparison. Multi-allelic → MIXED.
 - Genotype: parses GT from FORMAT field, normalizes phased (|) to unphased (/).
 - INFO Parser: scans `;`-separated key=value pairs, creates `INFO_*` columns. Flags → 1/0.
+- INFO Column Filter: profiles `INFO_*` columns (auto-detect numeric ≥80% threshold vs categorical). Numeric: operator + threshold. Categorical: value set. Missing (`.`) kept/removed via toggle. Uses `deleteRows`.
 - Find & Replace: supports scope (all/selected/column), case-sensitive, numeric validation.
 - Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
 - Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.

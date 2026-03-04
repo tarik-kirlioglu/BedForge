@@ -22,6 +22,7 @@ import { InfoParserDialog } from "../operations/InfoParserDialog";
 import { ValidationDialog } from "../operations/ValidationDialog";
 import { IntersectDialog } from "../operations/IntersectDialog";
 import { ComplementDialog } from "../operations/ComplementDialog";
+import { InfoColumnFilterDialog } from "../operations/InfoColumnFilterDialog";
 import { openInUCSC } from "../../operations/ucsc-link";
 
 interface ContextMenuState {
@@ -53,6 +54,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const isRunning = useOperationStore((s) => s.isRunning);
   const menuRef = useRef<HTMLDivElement>(null);
   const vcfSampleNames = useFileStore((s) => s.vcfSampleNames);
+  const columns = useFileStore((s) => s.columns);
   const [showSlopDialog, setShowSlopDialog] = useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [showQualDialog, setShowQualDialog] = useState(false);
@@ -62,6 +64,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [showIntersectDialog, setShowIntersectDialog] = useState(false);
   const [showComplementDialog, setShowComplementDialog] = useState(false);
+  const [showInfoColumnFilterDialog, setShowInfoColumnFilterDialog] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -89,6 +92,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const selectedRows = rows.filter((r) => selectedRowIndices.has(r._index));
   const isBed = fileFormat !== "vcf";
   const isVcf = fileFormat === "vcf";
+  const hasInfoColumns = isVcf && columns.some((c) => c.startsWith("INFO_"));
   const targetAssembly = assembly === "GRCh37" ? "GRCh38" : "GRCh37";
 
   // ── Handlers ──
@@ -179,6 +183,11 @@ export function GenomicContextMenu(): React.ReactElement | null {
     setShowInfoParserDialog(true);
   }
 
+  function handleInfoColumnFilter(): void {
+    close();
+    setShowInfoColumnFilterDialog(true);
+  }
+
   function handleValidate(): void {
     close();
     setShowValidationDialog(true);
@@ -225,7 +234,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   }
 
   const menuWidth = 280;
-  const menuHeight = isVcf ? 560 : 700;
+  const menuHeight = isVcf ? (hasInfoColumns ? 600 : 560) : 700;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
@@ -270,6 +279,10 @@ export function GenomicContextMenu(): React.ReactElement | null {
       <ComplementDialog
         visible={showComplementDialog}
         onClose={() => setShowComplementDialog(false)}
+      />
+      <InfoColumnFilterDialog
+        visible={showInfoColumnFilterDialog}
+        onClose={() => setShowInfoColumnFilterDialog(false)}
       />
 
       {visible && (
@@ -361,6 +374,15 @@ export function GenomicContextMenu(): React.ReactElement | null {
                 onClick={handleParseInfo}
                 disabled={rows.length === 0}
               />
+              {hasInfoColumns && (
+                <MenuItem
+                  label="Filter by INFO Column"
+                  sublabel="INFO_AF, INFO_DP, ..."
+                  icon={<IconInfoColumnFilter />}
+                  onClick={handleInfoColumnFilter}
+                  disabled={rows.length === 0}
+                />
+              )}
 
               <Divider />
             </>
@@ -586,6 +608,15 @@ function IconGenotype(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4361ee" strokeWidth="1.5">
       <path d="M12 2v10M8 6l8 0M6 12c0 5.5 6 10 6 10s6-4.5 6-10" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconInfoColumnFilter(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.5">
+      <path d="M3 6h18M7 12h10M10 18h4" strokeLinecap="round" />
+      <circle cx="20" cy="16" r="3" />
     </svg>
   );
 }
