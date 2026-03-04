@@ -6,6 +6,7 @@ import type { GenomicRow } from "../types/genomic";
 /**
  * Generate and download an IGV batch script for selected regions.
  * IGV uses 1-based coordinates.
+ * Usage: IGV → Tools → Run Batch Script → select this file.
  */
 export function downloadIGVBatch(
   rows: readonly GenomicRow[],
@@ -16,19 +17,18 @@ export function downloadIGVBatch(
     return;
   }
 
-  const lines: string[] = ["new"];
+  const lines: string[] = [];
 
   for (const row of rows) {
     const { chrom, start, end } = getIGVCoords(row, isBed);
     lines.push(`goto ${chrom}:${start}-${end}`);
-    lines.push("snapshot");
   }
 
   const content = lines.join("\n") + "\n";
-  downloadFile(content, "igv_batch.bat");
+  downloadFile(content, "igv_regions.txt");
 
   toast.success(`IGV batch script downloaded`, {
-    description: `${rows.length} region${rows.length !== 1 ? "s" : ""}`,
+    description: `${rows.length} region${rows.length !== 1 ? "s" : ""} — open via IGV → Tools → Run Batch Script`,
   });
 }
 
