@@ -1,6 +1,7 @@
 import { ensemblFetch } from "./ensembl-client";
 import { toEnsemblChrom } from "../utils/chromosome";
-import type { Assembly } from "../types/genomic";
+import { toEnsemblStart, toEnsemblEnd } from "../utils/format-helpers";
+import type { Assembly, FileFormat } from "../types/genomic";
 
 interface SequenceResponse {
   id: string;
@@ -17,11 +18,11 @@ export async function getSequence(
   start: number,
   end: number,
   _assembly: Assembly,
-  isBed: boolean,
+  format: FileFormat,
 ): Promise<string> {
   const ensemblChrom = toEnsemblChrom(chrom);
-  const ensemblStart = isBed ? start + 1 : start;
-  const ensemblEnd = isBed ? end : end;
+  const ensemblStart = toEnsemblStart(start, format);
+  const ensemblEnd = toEnsemblEnd(end, format);
 
   const path = `/sequence/region/human/${ensemblChrom}:${ensemblStart}..${ensemblEnd}?content-type=application/json`;
 

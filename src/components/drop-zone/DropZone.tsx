@@ -5,11 +5,12 @@ import { useFileStore } from "../../stores/useFileStore";
 import { detectFormat } from "../../parsers/detect-format";
 import { parseBed } from "../../parsers/bed-parser";
 import { parseVcf } from "../../parsers/vcf-parser";
+import { parseGff3 } from "../../parsers/gff3-parser";
 import { detectChrPrefix } from "../../utils/chromosome";
 
 const ACCEPTED_EXTENSIONS = [
   ".bed", ".bed3", ".bed4", ".bed6", ".bed12",
-  ".vcf", ".txt", ".tsv",
+  ".vcf", ".gff3", ".gff", ".txt", ".tsv",
 ];
 
 export function DropZone(): React.ReactElement {
@@ -63,6 +64,17 @@ export function DropZone(): React.ReactElement {
             vcfMeta: result.vcfFile.meta,
             vcfSampleNames: result.vcfFile.sampleNames,
             useChrPrefix: detectChrPrefix(firstChrom),
+          };
+        } else if (format === "gff3") {
+          const result = parseGff3(content);
+          const firstSeqid = String(result.rows[0]?.seqid ?? "chr1");
+          pendingLoadRef.current = {
+            fileName: file.name,
+            fileFormat: "gff3",
+            rows: result.rows,
+            columns: result.columns,
+            gff3Directives: result.directives,
+            useChrPrefix: detectChrPrefix(firstSeqid),
           };
         } else {
           const result = parseBed(content);
@@ -147,6 +159,17 @@ export function DropZone(): React.ReactElement {
             vcfMeta: result.vcfFile.meta,
             vcfSampleNames: result.vcfFile.sampleNames,
             useChrPrefix: detectChrPrefix(firstChrom),
+          };
+        } else if (format === "gff3") {
+          const result = parseGff3(content);
+          const firstSeqid = String(result.rows[0]?.seqid ?? "chr1");
+          pendingLoadRef.current = {
+            fileName,
+            fileFormat: "gff3",
+            rows: result.rows,
+            columns: result.columns,
+            gff3Directives: result.directives,
+            useChrPrefix: detectChrPrefix(firstSeqid),
           };
         } else {
           const result = parseBed(content);
@@ -254,7 +277,7 @@ export function DropZone(): React.ReactElement {
         </div>
 
         <p className="animate-fade-in-up mb-10 max-w-md text-center text-[15px] leading-relaxed text-text-secondary">
-          Visual genomic editor for <span className="font-mono text-cyan-glow/80 text-sm">BED</span> and <span className="font-mono text-electric text-sm">VCF</span> files.
+          Visual genomic editor for <span className="font-mono text-cyan-glow/80 text-sm">BED</span>, <span className="font-mono text-electric text-sm">VCF</span> and <span className="font-mono text-nt-g text-sm">GFF3</span> files.
           LiftOver, annotate, merge — without writing a single line of code.
         </p>
 
@@ -299,15 +322,18 @@ export function DropZone(): React.ReactElement {
           {/* Format badges */}
           <div className="mt-6 flex items-center gap-2">
             {[
-              { label: "BED3–12", color: "cyan-glow" },
+              { label: "BED3–12", color: "cyan" },
               { label: "VCF 4.x", color: "electric" },
+              { label: "GFF3", color: "amber" },
             ].map((fmt) => (
               <span
                 key={fmt.label}
                 className={`rounded-full border px-3 py-1 font-mono text-[11px] tracking-wide ${
-                  fmt.color === "cyan-glow"
+                  fmt.color === "cyan"
                     ? "border-cyan-glow/15 bg-cyan-glow/5 text-cyan-glow/70"
-                    : "border-electric/15 bg-electric/5 text-electric/70"
+                    : fmt.color === "electric"
+                      ? "border-electric/15 bg-electric/5 text-electric/70"
+                      : "border-nt-g/15 bg-nt-g/5 text-nt-g/70"
                 }`}
               >
                 {fmt.label}
@@ -331,6 +357,12 @@ export function DropZone(): React.ReactElement {
               className="rounded-lg border border-electric/15 bg-electric/5 px-3.5 py-1.5 font-mono text-[11px] font-medium text-electric/80 transition-colors hover:bg-electric/10 hover:text-electric"
             >
               VCF Example
+            </button>
+            <button
+              onClick={() => loadExample("/samples/example.gff3")}
+              className="rounded-lg border border-nt-g/15 bg-nt-g/5 px-3.5 py-1.5 font-mono text-[11px] font-medium text-nt-g/80 transition-colors hover:bg-nt-g/10 hover:text-nt-g"
+            >
+              GFF3 Example
             </button>
           </div>
         </div>
@@ -387,14 +419,27 @@ export function DropZone(): React.ReactElement {
       </div>
 
       {/* ── Footer ── */}
-      <div className="absolute bottom-6 z-10 text-[11px] text-text-ghost">
-        Built for bioinformaticians. No backend — your data stays in the browser.
+      <div className="absolute bottom-6 z-10 flex items-center gap-2.5 text-[11px] text-text-ghost">
+        <span>Built for bioinformaticians. No backend — your data stays in the browser.</span>
+        <span className="text-elevated">·</span>
+        <a
+          href="https://github.com/tarik-kirlioglu/BedForge"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 transition-colors hover:text-text-secondary"
+          title="View on GitHub"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+          </svg>
+          GitHub
+        </a>
       </div>
 
       <input
         ref={fileInputRef}
         type="file"
-        accept=".bed,.bed3,.bed4,.bed6,.bed12,.vcf,.txt,.tsv"
+        accept=".bed,.bed3,.bed4,.bed6,.bed12,.vcf,.gff3,.gff,.txt,.tsv"
         onChange={handleFileInput}
         className="hidden"
       />

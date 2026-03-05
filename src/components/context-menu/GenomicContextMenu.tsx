@@ -23,7 +23,10 @@ import { ValidationDialog } from "../operations/ValidationDialog";
 import { IntersectDialog } from "../operations/IntersectDialog";
 import { ComplementDialog } from "../operations/ComplementDialog";
 import { InfoColumnFilterDialog } from "../operations/InfoColumnFilterDialog";
+import { TypeFilterDialog } from "../operations/TypeFilterDialog";
+import { AttributeParserDialog } from "../operations/AttributeParserDialog";
 import { openInUCSC } from "../../operations/ucsc-link";
+import { isBedFamily } from "../../utils/format-helpers";
 
 interface ContextMenuState {
   visible: boolean;
@@ -65,6 +68,8 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const [showIntersectDialog, setShowIntersectDialog] = useState(false);
   const [showComplementDialog, setShowComplementDialog] = useState(false);
   const [showInfoColumnFilterDialog, setShowInfoColumnFilterDialog] = useState(false);
+  const [showTypeFilterDialog, setShowTypeFilterDialog] = useState(false);
+  const [showAttributeParserDialog, setShowAttributeParserDialog] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -90,9 +95,11 @@ export function GenomicContextMenu(): React.ReactElement | null {
   }, [visible, close]);
 
   const selectedRows = rows.filter((r) => selectedRowIndices.has(r._index));
-  const isBed = fileFormat !== "vcf";
+  const isBed = fileFormat ? isBedFamily(fileFormat) : false;
   const isVcf = fileFormat === "vcf";
+  const isGff3 = fileFormat === "gff3";
   const hasInfoColumns = isVcf && columns.some((c) => c.startsWith("INFO_"));
+  const hasAttrColumns = isGff3 && columns.some((c) => c.startsWith("ATTR_"));
   const targetAssembly = assembly === "GRCh37" ? "GRCh38" : "GRCh37";
 
   // ── Handlers ──
@@ -100,36 +107,36 @@ export function GenomicContextMenu(): React.ReactElement | null {
   function handleLiftOver(): void {
     close();
     if (!assembly) return;
-    runLiftOver(selectedRows, assembly, targetAssembly, useChrPrefix, isBed);
+    runLiftOver(selectedRows, assembly, targetAssembly, useChrPrefix, fileFormat!);
   }
 
   function handleCleanIntergenic(): void {
     close();
     if (!assembly) return;
-    runCleanIntergenic(isBed ? rows : selectedRows, assembly, useChrPrefix, isBed);
+    runCleanIntergenic(isVcf ? selectedRows : rows, assembly, useChrPrefix, fileFormat!);
   }
 
   function handleGCContent(): void {
     close();
     if (!assembly) return;
-    runGCContent(selectedRows, assembly, useChrPrefix, isBed);
+    runGCContent(selectedRows, assembly, useChrPrefix, fileFormat!);
   }
 
   function handleAnnotateGenes(): void {
     close();
     if (!assembly) return;
     const targets = selectedRows.length > 0 ? selectedRows : rows;
-    runAnnotateGenes(targets, assembly, isBed);
+    runAnnotateGenes(targets, assembly, fileFormat!);
   }
 
   function handleSort(): void {
     close();
-    runSort(isBed);
+    runSort(fileFormat!);
   }
 
   function handleRemoveDuplicates(): void {
     close();
-    runRemoveDuplicates(isBed);
+    runRemoveDuplicates(fileFormat!);
   }
 
   function handleMergeRegions(): void {
@@ -145,7 +152,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   function handleSlopConfirm(upstream: number, downstream: number): void {
     setShowSlopDialog(false);
     const targets = selectedRows.length > 0 ? selectedRows : rows;
-    runExtendRegions(targets, upstream, downstream, isBed);
+    runExtendRegions(targets, upstream, downstream, fileFormat!);
   }
 
   function handleFilterByFilter(): void {
@@ -188,6 +195,21 @@ export function GenomicContextMenu(): React.ReactElement | null {
     setShowInfoColumnFilterDialog(true);
   }
 
+  function handleTypeFilter(): void {
+    close();
+    setShowTypeFilterDialog(true);
+  }
+
+  function handleParseAttributes(): void {
+    close();
+    setShowAttributeParserDialog(true);
+  }
+
+  function handleAttrColumnFilter(): void {
+    close();
+    setShowInfoColumnFilterDialog(true);
+  }
+
   function handleValidate(): void {
     close();
     setShowValidationDialog(true);
@@ -205,7 +227,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
   function handleUCSCLink(): void {
     close();
-    openInUCSC(selectedRows, assembly, isBed);
+    openInUCSC(selectedRows, assembly, fileFormat!);
   }
 
   function handleAddRow(): void {
@@ -234,7 +256,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   }
 
   const menuWidth = 280;
-  const menuHeight = isVcf ? (hasInfoColumns ? 600 : 560) : 700;
+  const menuHeight = isVcf ? (hasInfoColumns ? 600 : 560) : isGff3 ? (hasAttrColumns ? 600 : 540) : 700;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
@@ -284,6 +306,14 @@ export function GenomicContextMenu(): React.ReactElement | null {
         visible={showInfoColumnFilterDialog}
         onClose={() => setShowInfoColumnFilterDialog(false)}
       />
+      <TypeFilterDialog
+        visible={showTypeFilterDialog}
+        onClose={() => setShowTypeFilterDialog(false)}
+      />
+      <AttributeParserDialog
+        visible={showAttributeParserDialog}
+        onClose={() => setShowAttributeParserDialog(false)}
+      />
 
       {visible && (
         <div
@@ -324,7 +354,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
           <MenuItem
             label="Clean Intergenic"
-            sublabel={isBed ? "All rows" : "Selected"}
+            sublabel={isBed ? "All rows" : isGff3 ? "All rows" : "Selected"}
             icon={<IconFilter />}
             onClick={handleCleanIntergenic}
             disabled={isRunning}
@@ -380,6 +410,39 @@ export function GenomicContextMenu(): React.ReactElement | null {
                   sublabel="INFO_AF, INFO_DP, ..."
                   icon={<IconInfoColumnFilter />}
                   onClick={handleInfoColumnFilter}
+                  disabled={rows.length === 0}
+                />
+              )}
+
+              <Divider />
+            </>
+          )}
+
+          {/* ── GFF3 Filter Section ── */}
+          {isGff3 && (
+            <>
+              <SectionLabel text="GFF3 Filter" />
+
+              <MenuItem
+                label="Filter by Type"
+                sublabel="gene, exon, CDS, ..."
+                icon={<IconGff3Type />}
+                onClick={handleTypeFilter}
+                disabled={rows.length === 0}
+              />
+              <MenuItem
+                label="Parse Attributes"
+                sublabel="Extract to columns"
+                icon={<IconGff3Attr />}
+                onClick={handleParseAttributes}
+                disabled={rows.length === 0}
+              />
+              {hasAttrColumns && (
+                <MenuItem
+                  label="Filter by Attribute"
+                  sublabel="ATTR_Name, ATTR_ID, ..."
+                  icon={<IconInfoColumnFilter />}
+                  onClick={handleAttrColumnFilter}
                   disabled={rows.length === 0}
                 />
               )}
@@ -709,6 +772,24 @@ function IconAddRow(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconGff3Type(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+      <path d="M4 7h16M4 12h10M4 17h6" strokeLinecap="round" />
+      <circle cx="19" cy="14" r="3" />
+    </svg>
+  );
+}
+
+function IconGff3Attr(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
     </svg>
   );
 }

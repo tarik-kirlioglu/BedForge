@@ -12,7 +12,7 @@ export function StatsPanel(): React.ReactElement {
   const [selectedCol, setSelectedCol] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const isBed = fileFormat !== "vcf";
+  const hasRegionSize = fileFormat !== "vcf";
 
   const stats = useMemo<ColumnStats | null>(() => {
     if (!selectedCol) return null;
@@ -42,7 +42,7 @@ export function StatsPanel(): React.ReactElement {
       <ChromDistribution />
 
       {/* Size Distribution (BED only) */}
-      {isBed && <SizeDistribution />}
+      {hasRegionSize && <SizeDistribution />}
 
       <div className="border-t border-elevated/30" />
 

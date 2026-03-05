@@ -9,6 +9,7 @@ export function detectFormat(
 
   // Extension-based detection
   if (ext === "vcf") return "vcf";
+  if (ext === "gff3" || ext === "gff") return "gff3";
   if (/^bed\d*$/.test(ext)) return detectBedFormat(content);
 
   // Content sniffing for .txt / .tsv / unknown extensions
@@ -17,6 +18,9 @@ export function detectFormat(
 
   // VCF files always start with ##fileformat=VCF
   if (content.startsWith("##fileformat=VCF")) return "vcf";
+
+  // GFF3 files start with ##gff-version
+  if (content.startsWith("##gff-version")) return "gff3";
 
   // Try BED detection
   return detectBedFormat(content);

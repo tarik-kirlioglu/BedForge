@@ -1,20 +1,25 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import { getChromColumn, getStartColumn, getEndColumn } from "../utils/format-helpers";
+import type { FileFormat } from "../types/genomic";
 
 /**
  * Remove duplicate rows based on chrom:start:end coordinates.
  * Keeps the first occurrence, removes subsequent duplicates.
  */
-export function runRemoveDuplicates(isBed: boolean): void {
+export function runRemoveDuplicates(format: FileFormat): void {
   const store = useFileStore.getState();
   const seen = new Set<string>();
   const duplicateIndices = new Set<number>();
+  const chromCol = getChromColumn(format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
 
   for (const row of store.rows) {
-    const chrom = String(row.chrom ?? row.CHROM ?? "");
-    const start = String(isBed ? row.chromStart : row.POS);
-    const end = isBed ? String(row.chromEnd) : start;
+    const chrom = String(row[chromCol] ?? "");
+    const start = String(row[startCol]);
+    const end = String(row[endCol]);
     const key = `${chrom}:${start}:${end}`;
 
     if (seen.has(key)) {

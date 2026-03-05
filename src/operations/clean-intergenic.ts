@@ -4,7 +4,8 @@ import { useFileStore } from "../stores/useFileStore";
 import { useOperationStore } from "../stores/useOperationStore";
 import { runBatchOperation } from "./operation-runner";
 import { getGeneOverlaps } from "../api/overlap";
-import type { Assembly, GenomicRow } from "../types/genomic";
+import { getChromColumn, getStartColumn, getEndColumn } from "../utils/format-helpers";
+import type { Assembly, FileFormat, GenomicRow } from "../types/genomic";
 
 /**
  * Remove intergenic regions — rows that don't overlap any gene.
@@ -13,7 +14,7 @@ export async function runCleanIntergenic(
   targetRows: GenomicRow[],
   assembly: Assembly,
   _useChrPrefix: boolean,
-  isBed: boolean,
+  format: FileFormat,
 ): Promise<void> {
   if (targetRows.length === 0) return;
 
@@ -32,14 +33,18 @@ export async function runCleanIntergenic(
   });
 
   try {
-    const results = await runBatchOperation(targetRows, async (row) => {
-      const chrom = String(row.chrom ?? row.CHROM ?? "");
-      const start = Number(row.chromStart ?? row.POS ?? 0);
-      const end = isBed
-        ? Number(row.chromEnd ?? 0)
-        : start + String(row.REF ?? "").length - 1;
+    const chromCol = getChromColumn(format);
+    const startCol = getStartColumn(format);
+    const endCol = getEndColumn(format);
 
-      const genes = await getGeneOverlaps(chrom, start, end, assembly, isBed);
+    const results = await runBatchOperation(targetRows, async (row) => {
+      const chrom = String(row[chromCol] ?? "");
+      const start = Number(row[startCol] ?? 0);
+      const end = startCol === endCol
+        ? start + String(row.REF ?? "").length - 1
+        : Number(row[endCol] ?? 0);
+
+      const genes = await getGeneOverlaps(chrom, start, end, assembly, format);
       return genes.length > 0; // true = genic, false = intergenic
     });
 

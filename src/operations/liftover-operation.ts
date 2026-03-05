@@ -5,7 +5,8 @@ import { useOperationStore } from "../stores/useOperationStore";
 import { runBatchOperation } from "./operation-runner";
 import { liftOverRegion } from "../api/liftover";
 import { fromEnsemblChrom } from "../utils/chromosome";
-import type { Assembly, GenomicRow } from "../types/genomic";
+import { getChromColumn, getStartColumn, getEndColumn, isZeroBased } from "../utils/format-helpers";
+import type { Assembly, FileFormat, GenomicRow } from "../types/genomic";
 
 /**
  * Run LiftOver on selected rows.
@@ -16,7 +17,7 @@ export async function runLiftOver(
   sourceAssembly: Assembly,
   targetAssembly: Assembly,
   useChrPrefix: boolean,
-  isBed: boolean,
+  format: FileFormat,
 ): Promise<void> {
   if (selectedRows.length === 0) return;
 
@@ -36,12 +37,16 @@ export async function runLiftOver(
   });
 
   try {
+    const chromCol = getChromColumn(format);
+    const startCol = getStartColumn(format);
+    const endCol = getEndColumn(format);
+
     const results = await runBatchOperation(selectedRows, async (row) => {
-      const chrom = String(row.chrom ?? row.CHROM ?? "");
-      const start = Number(row.chromStart ?? row.POS ?? 0);
-      const end = isBed
-        ? Number(row.chromEnd ?? 0)
-        : start + String(row.REF ?? "").length - 1;
+      const chrom = String(row[chromCol] ?? "");
+      const start = Number(row[startCol] ?? 0);
+      const end = startCol === endCol
+        ? start + String(row.REF ?? "").length - 1
+        : Number(row[endCol] ?? 0);
 
       const mapped = await liftOverRegion(
         chrom,
@@ -49,7 +54,7 @@ export async function runLiftOver(
         end,
         sourceAssembly,
         targetAssembly,
-        isBed,
+        format,
       );
       return mapped;
     });
@@ -64,24 +69,21 @@ export async function runLiftOver(
 
       const mappedChrom = fromEnsemblChrom(result.chrom, useChrPrefix);
 
-      if (isBed) {
-        updates.push({
-          index,
-          row: {
-            chrom: mappedChrom,
-            chromStart: result.start - 1, // Ensembl 1-based → BED 0-based
-            chromEnd: result.end,
-          },
-        });
+      const rowUpdate: Partial<GenomicRow> = {
+        [chromCol]: mappedChrom,
+      };
+      if (isZeroBased(format)) {
+        rowUpdate[startCol] = result.start - 1; // Ensembl 1-based → BED 0-based
+        rowUpdate[endCol] = result.end;
+      } else if (startCol === endCol) {
+        // VCF: only POS
+        rowUpdate[startCol] = result.start;
       } else {
-        updates.push({
-          index,
-          row: {
-            CHROM: mappedChrom,
-            POS: result.start,
-          },
-        });
+        // GFF3: both start and end, 1-based
+        rowUpdate[startCol] = result.start;
+        rowUpdate[endCol] = result.end;
       }
+      updates.push({ index, row: rowUpdate });
     }
 
     if (updates.length > 0) {

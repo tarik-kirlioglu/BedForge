@@ -4,7 +4,7 @@ import type { BedFormat } from "./bed";
 export type Assembly = "GRCh37" | "GRCh38";
 
 /** Detected file format */
-export type FileFormat = BedFormat | "vcf";
+export type FileFormat = BedFormat | "vcf" | "gff3";
 
 /** A genomic region (0-based half-open, BED-style) */
 export interface GenomicRegion {

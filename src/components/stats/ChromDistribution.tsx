@@ -2,16 +2,18 @@ import { useMemo } from "react";
 
 import { useFileStore } from "../../stores/useFileStore";
 import { chromRank } from "../../utils/chromosome";
+import { getChromColumn } from "../../utils/format-helpers";
 
 export function ChromDistribution(): React.ReactElement {
   const rows = useFileStore((s) => s.rows);
   const fileFormat = useFileStore((s) => s.fileFormat);
-  const isBed = fileFormat !== "vcf";
 
   const distribution = useMemo(() => {
+    if (!fileFormat) return [];
+    const chromCol = getChromColumn(fileFormat);
     const counts = new Map<string, number>();
     for (const row of rows) {
-      const chrom = String(isBed ? row.chrom : row.CHROM) ?? "";
+      const chrom = String(row[chromCol] ?? "");
       if (!chrom || chrom === ".") continue;
       counts.set(chrom, (counts.get(chrom) ?? 0) + 1);
     }
@@ -19,7 +21,7 @@ export function ChromDistribution(): React.ReactElement {
     return Array.from(counts.entries())
       .map(([chrom, count]) => ({ chrom, count }))
       .sort((a, b) => chromRank(a.chrom) - chromRank(b.chrom));
-  }, [rows, isBed]);
+  }, [rows, fileFormat]);
 
   if (distribution.length === 0) return <></>;
 

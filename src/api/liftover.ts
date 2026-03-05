@@ -1,6 +1,7 @@
 import { ensemblFetch } from "./ensembl-client";
 import { toEnsemblChrom } from "../utils/chromosome";
-import type { Assembly } from "../types/genomic";
+import { toEnsemblStart, toEnsemblEnd } from "../utils/format-helpers";
+import type { Assembly, FileFormat } from "../types/genomic";
 
 interface MappedRegion {
   seq_region_name: string;
@@ -36,13 +37,13 @@ export async function liftOverRegion(
   end: number,
   sourceAssembly: Assembly,
   targetAssembly: Assembly,
-  isBed: boolean,
+  format: FileFormat,
 ): Promise<LiftOverResult | null> {
   const ensemblChrom = toEnsemblChrom(chrom);
 
   // Convert to Ensembl 1-based inclusive
-  const ensemblStart = isBed ? start + 1 : start;
-  const ensemblEnd = isBed ? end : end;
+  const ensemblStart = toEnsemblStart(start, format);
+  const ensemblEnd = toEnsemblEnd(end, format);
 
   const path = `/map/human/${sourceAssembly}/${ensemblChrom}:${ensemblStart}..${ensemblEnd}/${targetAssembly}?content-type=application/json`;
 

@@ -26,10 +26,10 @@ export interface CategoricalFilterConfig {
   keepMissing: boolean;
 }
 
-/** Get all INFO_* column names from current file */
+/** Get all INFO_* and ATTR_* column names from current file */
 export function getInfoColumns(): string[] {
   const columns = useFileStore.getState().columns;
-  return columns.filter((c) => c.startsWith("INFO_"));
+  return columns.filter((c) => c.startsWith("INFO_") || c.startsWith("ATTR_"));
 }
 
 /** Profile a single INFO_* column: detect type, compute stats or unique values */

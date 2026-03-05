@@ -1,0 +1,32 @@
+##gff-version 3
+##sequence-region chr1 1 249250621
+##sequence-region chr2 1 243199373
+##sequence-region chrX 1 155270560
+chr1	Ensembl	gene	11869	14409	.	+	.	ID=ENSG00000223972;Name=DDX11L1;biotype=transcribed_unprocessed_pseudogene
+chr1	Ensembl	mRNA	11869	14409	.	+	.	ID=ENST00000456328;Parent=ENSG00000223972;Name=DDX11L1-202;biotype=lncRNA
+chr1	Ensembl	exon	11869	12227	.	+	.	ID=exon1_1;Parent=ENST00000456328
+chr1	Ensembl	exon	12613	12721	.	+	.	ID=exon1_2;Parent=ENST00000456328
+chr1	Ensembl	exon	13221	14409	.	+	.	ID=exon1_3;Parent=ENST00000456328
+chr1	Ensembl	gene	14362	29370	.	-	.	ID=ENSG00000227232;Name=WASH7P;biotype=unprocessed_pseudogene
+chr1	Ensembl	mRNA	14362	29370	.	-	.	ID=ENST00000488147;Parent=ENSG00000227232;Name=WASH7P-201;biotype=unprocessed_pseudogene
+chr1	Ensembl	exon	14362	14829	.	-	.	ID=exon2_1;Parent=ENST00000488147
+chr1	Ensembl	exon	14970	15038	.	-	.	ID=exon2_2;Parent=ENST00000488147
+chr1	Ensembl	exon	15796	15947	.	-	.	ID=exon2_3;Parent=ENST00000488147
+chr1	Ensembl	exon	16607	16765	.	-	.	ID=exon2_4;Parent=ENST00000488147
+chr1	Ensembl	exon	16858	17055	.	-	.	ID=exon2_5;Parent=ENST00000488147
+chr1	Ensembl	gene	69091	70008	.	+	.	ID=ENSG00000186092;Name=OR4F5;biotype=protein_coding
+chr1	Ensembl	mRNA	69091	70008	.	+	.	ID=ENST00000335137;Parent=ENSG00000186092;Name=OR4F5-201;biotype=protein_coding
+chr1	Ensembl	CDS	69091	70008	.	+	0	ID=CDS_OR4F5;Parent=ENST00000335137
+chr2	Ensembl	gene	38814	46588	.	+	.	ID=ENSG00000184731;Name=FAM110C;biotype=protein_coding
+chr2	Ensembl	mRNA	38814	46588	.	+	.	ID=ENST00000461467;Parent=ENSG00000184731;Name=FAM110C-202;biotype=protein_coding
+chr2	Ensembl	CDS	39039	39129	.	+	0	ID=CDS_FAM_1;Parent=ENST00000461467
+chr2	Ensembl	CDS	42626	42780	.	+	1	ID=CDS_FAM_2;Parent=ENST00000461467
+chr2	Ensembl	exon	38814	39129	.	+	.	ID=exon3_1;Parent=ENST00000461467
+chr2	Ensembl	exon	42626	42780	.	+	.	ID=exon3_2;Parent=ENST00000461467
+chr2	Ensembl	exon	45440	46588	.	+	.	ID=exon3_3;Parent=ENST00000461467
+chrX	Ensembl	gene	99883667	99894988	.	-	.	ID=ENSG00000000003;Name=TSPAN6;biotype=protein_coding
+chrX	Ensembl	mRNA	99883667	99894988	.	-	.	ID=ENST00000373020;Parent=ENSG00000000003;Name=TSPAN6-201;biotype=protein_coding
+chrX	Ensembl	CDS	99883667	99884983	.	-	0	ID=CDS_TSPAN6_1;Parent=ENST00000373020
+chrX	Ensembl	exon	99883667	99884983	.	-	.	ID=exon4_1;Parent=ENST00000373020
+chrX	Ensembl	exon	99885756	99885863	.	-	.	ID=exon4_2;Parent=ENST00000373020
+chrX	Ensembl	exon	99887482	99887565	.	-	.	ID=exon4_3;Parent=ENST00000373020

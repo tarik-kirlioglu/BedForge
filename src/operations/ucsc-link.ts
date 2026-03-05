@@ -1,7 +1,8 @@
 import { toast } from "sonner";
 
-import type { GenomicRow } from "../types/genomic";
+import type { GenomicRow, FileFormat } from "../types/genomic";
 import type { Assembly } from "../types/genomic";
+import { getChromColumn, getStartColumn, getEndColumn, isZeroBased } from "../utils/format-helpers";
 
 /**
  * Open selected regions in UCSC Genome Browser.
@@ -10,7 +11,7 @@ import type { Assembly } from "../types/genomic";
 export function openInUCSC(
   rows: readonly GenomicRow[],
   assembly: Assembly | null,
-  isBed: boolean,
+  format: FileFormat,
 ): void {
   if (rows.length === 0) {
     toast.error("No rows selected");
@@ -21,7 +22,7 @@ export function openInUCSC(
 
   if (rows.length === 1) {
     const row = rows[0]!;
-    const { chrom, start, end } = getUCSCCoords(row, isBed);
+    const { chrom, start, end } = getUCSCCoords(row, format);
     const url = `https://genome.ucsc.edu/cgi-bin/hgTracks?db=${db}&position=${encodeURIComponent(`${chrom}:${start}-${end}`)}`;
     window.open(url, "_blank");
     return;
@@ -29,13 +30,13 @@ export function openInUCSC(
 
   // Multiple rows: compute bounding region per chromosome
   // Pick the first chromosome's bounding box (if mixed chroms, use bounding of all same-chrom rows)
-  const firstChrom = getChrom(rows[0]!, isBed);
-  const sameChrRows = rows.filter((r) => getChrom(r, isBed) === firstChrom);
+  const firstChrom = getChromValue(rows[0]!, format);
+  const sameChrRows = rows.filter((r) => getChromValue(r, format) === firstChrom);
 
   let minStart = Infinity;
   let maxEnd = -Infinity;
   for (const row of sameChrRows) {
-    const { start, end } = getUCSCCoords(row, isBed);
+    const { start, end } = getUCSCCoords(row, format);
     if (start < minStart) minStart = start;
     if (end > maxEnd) maxEnd = end;
   }
@@ -56,28 +57,33 @@ export function openInUCSC(
   }
 }
 
-function getChrom(row: GenomicRow, isBed: boolean): string {
-  return String(isBed ? row.chrom : row.CHROM) ?? "";
+function getChromValue(row: GenomicRow, format: FileFormat): string {
+  const col = getChromColumn(format);
+  return String(row[col] ?? "");
 }
 
 function getUCSCCoords(
   row: GenomicRow,
-  isBed: boolean,
+  format: FileFormat,
 ): { chrom: string; start: number; end: number } {
-  const chrom = getChrom(row, isBed);
-  if (isBed) {
+  const chrom = getChromValue(row, format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
+
+  if (isZeroBased(format)) {
     // BED is 0-based, UCSC URL is also 0-based
     return {
       chrom,
-      start: Number(row.chromStart) || 0,
-      end: Number(row.chromEnd) || 0,
+      start: Number(row[startCol]) || 0,
+      end: Number(row[endCol]) || 0,
     };
   }
-  // VCF: POS is 1-based, UCSC needs 0-based start
-  const pos = Number(row.POS) || 1;
+  // 1-based formats (VCF, GFF3): UCSC needs 0-based start
+  const startVal = Number(row[startCol]) || 1;
+  const endVal = Number(row[endCol]) || startVal;
   return {
-    chrom: String(row.CHROM ?? ""),
-    start: pos - 1,
-    end: pos,
+    chrom,
+    start: startVal - 1,
+    end: endVal,
   };
 }

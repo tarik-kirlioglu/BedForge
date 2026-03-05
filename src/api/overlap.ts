@@ -1,6 +1,7 @@
 import { ensemblFetch } from "./ensembl-client";
 import { toEnsemblChrom } from "../utils/chromosome";
-import type { Assembly } from "../types/genomic";
+import { toEnsemblStart, toEnsemblEnd } from "../utils/format-helpers";
+import type { Assembly, FileFormat } from "../types/genomic";
 
 interface GeneOverlap {
   id: string;
@@ -21,11 +22,11 @@ export async function getGeneOverlaps(
   start: number,
   end: number,
   assembly: Assembly,
-  isBed: boolean,
+  format: FileFormat,
 ): Promise<GeneOverlap[]> {
   const ensemblChrom = toEnsemblChrom(chrom);
-  const ensemblStart = isBed ? start + 1 : start;
-  const ensemblEnd = isBed ? end : end;
+  const ensemblStart = toEnsemblStart(start, format);
+  const ensemblEnd = toEnsemblEnd(end, format);
 
   // Use GRCh37-specific server if needed
   const speciesPath = assembly === "GRCh37" ? "human" : "human";

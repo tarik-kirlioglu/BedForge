@@ -5,7 +5,8 @@ import { useOperationStore } from "../stores/useOperationStore";
 import { runBatchOperation } from "./operation-runner";
 import { ensemblFetch } from "../api/ensembl-client";
 import { toEnsemblChrom } from "../utils/chromosome";
-import type { Assembly, GenomicRow } from "../types/genomic";
+import { getChromColumn, getStartColumn, getEndColumn, toEnsemblStart, toEnsemblEnd } from "../utils/format-helpers";
+import type { Assembly, FileFormat, GenomicRow } from "../types/genomic";
 
 interface GeneFeature {
   external_name: string;
@@ -22,7 +23,7 @@ interface GeneFeature {
 export async function runAnnotateGenes(
   targetRows: GenomicRow[],
   _assembly: Assembly,
-  isBed: boolean,
+  format: FileFormat,
 ): Promise<void> {
   if (targetRows.length === 0) return;
 
@@ -41,16 +42,20 @@ export async function runAnnotateGenes(
   });
 
   try {
+    const chromCol = getChromColumn(format);
+    const startCol = getStartColumn(format);
+    const endCol = getEndColumn(format);
+
     const results = await runBatchOperation(targetRows, async (row) => {
-      const chrom = String(row.chrom ?? row.CHROM ?? "");
-      const start = Number(isBed ? row.chromStart : row.POS) || 0;
-      const end = isBed
-        ? Number(row.chromEnd ?? 0)
-        : start + String(row.REF ?? "").length - 1;
+      const chrom = String(row[chromCol] ?? "");
+      const start = Number(row[startCol]) || 0;
+      const end = startCol === endCol
+        ? start + String(row.REF ?? "").length - 1
+        : Number(row[endCol] ?? 0);
 
       const ensemblChrom = toEnsemblChrom(chrom);
-      const ensemblStart = isBed ? start + 1 : start;
-      const ensemblEnd = isBed ? end : end;
+      const ensemblStart = toEnsemblStart(start, format);
+      const ensemblEnd = toEnsemblEnd(end, format);
 
       const path = `/overlap/region/human/${ensemblChrom}:${ensemblStart}-${ensemblEnd}?feature=gene;content-type=application/json`;
 

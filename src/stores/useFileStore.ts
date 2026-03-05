@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 import type { Assembly, FileFormat, GenomicRow } from "../types/genomic";
+import type { Gff3Directive } from "../types/gff3";
 import type { VcfMetaLine } from "../types/vcf";
 
 const MAX_HISTORY = 20;
@@ -16,6 +17,7 @@ interface FileState {
   columns: string[];
   vcfMeta: VcfMetaLine[];
   vcfSampleNames: string[];
+  gff3Directives: Gff3Directive[];
 
   history: GenomicRow[][];
   historyIndex: number;
@@ -27,6 +29,7 @@ interface FileState {
     columns: string[];
     vcfMeta?: VcfMetaLine[];
     vcfSampleNames?: string[];
+    gff3Directives?: Gff3Directive[];
     useChrPrefix: boolean;
   }) => void;
   setAssembly: (assembly: Assembly) => void;
@@ -61,6 +64,7 @@ export const useFileStore = create<FileState>()(
     columns: [],
     vcfMeta: [],
     vcfSampleNames: [],
+    gff3Directives: [],
 
     history: [],
     historyIndex: -1,
@@ -73,6 +77,7 @@ export const useFileStore = create<FileState>()(
         state.columns = params.columns;
         state.vcfMeta = params.vcfMeta ?? [];
         state.vcfSampleNames = params.vcfSampleNames ?? [];
+        state.gff3Directives = params.gff3Directives ?? [];
         state.useChrPrefix = params.useChrPrefix;
         state.history = [params.rows.map((r) => ({ ...r }))];
         state.historyIndex = 0;
@@ -120,15 +125,16 @@ export const useFileStore = create<FileState>()(
         };
 
         const isVcf = state.fileFormat === "vcf";
+        const isGff3 = state.fileFormat === "gff3";
         for (const col of state.columns) {
           if (isVcf) {
             newRow[col] = col === "POS" ? 0 : ".";
+          } else if (isGff3) {
+            newRow[col] = (col === "start" || col === "end") ? 0 : ".";
           } else {
             if (col === "chromStart" || col === "chromEnd" || col === "score" ||
                 col === "thickStart" || col === "thickEnd" || col === "blockCount") {
               newRow[col] = 0;
-            } else if (col === "chrom") {
-              newRow[col] = ".";
             } else {
               newRow[col] = ".";
             }
@@ -190,6 +196,7 @@ export const useFileStore = create<FileState>()(
         state.columns = [];
         state.vcfMeta = [];
         state.vcfSampleNames = [];
+        state.gff3Directives = [];
         state.history = [];
         state.historyIndex = -1;
       }),

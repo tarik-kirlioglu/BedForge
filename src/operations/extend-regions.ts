@@ -1,7 +1,8 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
-import type { GenomicRow } from "../types/genomic";
+import { isBedFamily } from "../utils/format-helpers";
+import type { FileFormat, GenomicRow } from "../types/genomic";
 
 /**
  * Extend/Slop BED regions by N bases upstream and downstream.
@@ -11,14 +12,14 @@ export function runExtendRegions(
   targetRows: GenomicRow[],
   upstream: number,
   downstream: number,
-  isBed: boolean,
+  format: FileFormat,
 ): void {
   if (targetRows.length === 0) return;
   if (upstream === 0 && downstream === 0) return;
 
   const store = useFileStore.getState();
 
-  if (isBed) {
+  if (isBedFamily(format)) {
     const updates = targetRows.map((row) => {
       const start = Number(row.chromStart ?? 0);
       const end = Number(row.chromEnd ?? 0);

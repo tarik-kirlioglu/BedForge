@@ -2,11 +2,16 @@ import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
 import { chromRank } from "../utils/chromosome";
-import type { GenomicRow } from "../types/genomic";
+import { getChromColumn, getStartColumn, getEndColumn } from "../utils/format-helpers";
+import type { FileFormat, GenomicRow } from "../types/genomic";
 
-function compareRows(a: GenomicRow, b: GenomicRow, isBed: boolean): number {
-  const chromA = String(a.chrom ?? a.CHROM ?? "");
-  const chromB = String(b.chrom ?? b.CHROM ?? "");
+function compareRows(a: GenomicRow, b: GenomicRow, format: FileFormat): number {
+  const chromCol = getChromColumn(format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
+
+  const chromA = String(a[chromCol] ?? "");
+  const chromB = String(b[chromCol] ?? "");
 
   const rankDiff = chromRank(chromA) - chromRank(chromB);
   if (rankDiff !== 0) return rankDiff;
@@ -16,13 +21,13 @@ function compareRows(a: GenomicRow, b: GenomicRow, isBed: boolean): number {
     return chromA.localeCompare(chromB);
   }
 
-  const startA = Number(isBed ? a.chromStart : a.POS) || 0;
-  const startB = Number(isBed ? b.chromStart : b.POS) || 0;
+  const startA = Number(a[startCol]) || 0;
+  const startB = Number(b[startCol]) || 0;
   if (startA !== startB) return startA - startB;
 
-  if (isBed) {
-    const endA = Number(a.chromEnd) || 0;
-    const endB = Number(b.chromEnd) || 0;
+  if (startCol !== endCol) {
+    const endA = Number(a[endCol]) || 0;
+    const endB = Number(b[endCol]) || 0;
     return endA - endB;
   }
 
@@ -30,9 +35,9 @@ function compareRows(a: GenomicRow, b: GenomicRow, isBed: boolean): number {
 }
 
 /** Sort rows by natural chromosome order, then by start, then by end */
-export function runSort(isBed: boolean): void {
+export function runSort(format: FileFormat): void {
   const store = useFileStore.getState();
-  const sorted = [...store.rows].sort((a, b) => compareRows(a, b, isBed));
+  const sorted = [...store.rows].sort((a, b) => compareRows(a, b, format));
 
   // Re-index after sort
   const reindexed = sorted.map((row, i) => ({

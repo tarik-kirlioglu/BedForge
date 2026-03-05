@@ -1,15 +1,20 @@
 import { useMemo } from "react";
 
 import { useFileStore } from "../../stores/useFileStore";
+import { getStartColumn, getEndColumn } from "../../utils/format-helpers";
 
 export function SizeDistribution(): React.ReactElement {
   const rows = useFileStore((s) => s.rows);
+  const fileFormat = useFileStore((s) => s.fileFormat);
 
   const { bins, stats } = useMemo(() => {
+    if (!fileFormat) return { bins: [], stats: null };
+    const startCol = getStartColumn(fileFormat);
+    const endCol = getEndColumn(fileFormat);
     const sizes: number[] = [];
     for (const row of rows) {
-      const start = Number(row.chromStart);
-      const end = Number(row.chromEnd);
+      const start = Number(row[startCol]);
+      const end = Number(row[endCol]);
       if (!isNaN(start) && !isNaN(end) && end > start) {
         sizes.push(end - start);
       }
@@ -60,7 +65,7 @@ export function SizeDistribution(): React.ReactElement {
       })),
       stats: { min, max, p25, p50, p75 },
     };
-  }, [rows]);
+  }, [rows, fileFormat]);
 
   if (!stats || bins.length === 0) return <></>;
 
