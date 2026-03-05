@@ -67,19 +67,19 @@ export const SPECIES_LIST: SpeciesConfig[] = [
     ],
   },
   {
-    id: "chicken",
-    displayName: "Chicken",
-    ensemblName: "chicken",
+    id: "a_thaliana",
+    displayName: "A. thaliana",
+    ensemblName: "arabidopsis_thaliana",
     assemblies: [
-      { name: "bGalGal1", ucscDb: "galGal6", label: "GRCg7b (galGal6)" },
+      { name: "TAIR10", ucscDb: "araTha1", label: "TAIR10 (araTha1)" },
     ],
   },
   {
-    id: "dog",
-    displayName: "Dog",
-    ensemblName: "dog",
+    id: "s_cerevisiae",
+    displayName: "S. cerevisiae",
+    ensemblName: "saccharomyces_cerevisiae",
     assemblies: [
-      { name: "ROS_Cfam_1.0", ucscDb: "canFam6", label: "ROS_Cfam_1.0 (canFam6)" },
+      { name: "R64-1-1", ucscDb: "sacCer3", label: "R64-1-1 (sacCer3)" },
     ],
   },
 ];

@@ -111,8 +111,8 @@ Conversions between these systems are handled automatically.
 | Zebrafish | GRCz11 (danRer11) |
 | Fruit fly | BDGP6 (dm6) |
 | C. elegans | WBcel235 (ce11) |
-| Chicken | GRCg7b (galGal6) |
-| Dog | ROS_Cfam_1.0 (canFam6) |
+| A. thaliana | TAIR10 (araTha1) |
+| S. cerevisiae | R64-1-1 (sacCer3) |
 
 All Ensembl API operations (LiftOver, Annotate Genes, GC Content, Clean Intergenic) work with any supported species. LiftOver is available for species with multiple assemblies (Human, Mouse). UCSC Genome Browser links automatically resolve the correct database.
 

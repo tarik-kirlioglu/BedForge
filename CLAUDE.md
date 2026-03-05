@@ -142,6 +142,9 @@ src/
 - BED/VCF/GFF3: `chr1`, `chrX`, `chrM` / Ensembl: `1`, `X`, `MT`
 - `chr` prefix detected on file load, stripped for API, restored in results
 - Special case: `chrM` ↔ `MT`
+- S. cerevisiae: Roman numerals `I`–`XVI` + `Mito` (UCSC uses `chrI`–`chrXVI`)
+- A. thaliana: `1`–`5` + `Mt` (mitochondria) + `Pt` (plastid/chloroplast)
+- `CHROM_ORDER` supports numeric (1–22), Roman (I–XVI), and special chromosomes for sorting
 
 ## Multi-Species Support
 
@@ -155,8 +158,8 @@ BedForge supports 8 model organisms via configurable `SpeciesConfig` in `types/g
 | Zebrafish | zebrafish | GRCz11 |
 | Fruit fly | drosophila_melanogaster | BDGP6.46 |
 | C. elegans | caenorhabditis_elegans | WBcel235 |
-| Chicken | chicken | bGalGal1 |
-| Dog | dog | ROS_Cfam_1.0 |
+| A. thaliana | arabidopsis_thaliana | TAIR10 |
+| S. cerevisiae | saccharomyces_cerevisiae | R64-1-1 |
 
 - Two-step picker on file load: species → assembly (single-assembly species skip second step)
 - `species` and `assembly` stored in `useFileStore`
