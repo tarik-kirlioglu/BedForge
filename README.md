@@ -126,7 +126,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file (gzip-compressed files also accepted), select your species and assembly, and right-click to explore operations.
+Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file (gzip-compressed files also accepted), select your species and assembly, and right-click to explore operations. You can also click **Try Example** to instantly load a Human (GRCh38) sample file.
 
 ### Commands
 

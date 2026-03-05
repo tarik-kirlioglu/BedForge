@@ -30,7 +30,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Full-screen hero with `.bg-grid` animated background and radial glow effects
 - Brand mark: "BedForge" with cyan-glow accent
 - Drop chamber: Dashed border area with `.glow-border` on drag-over, scale transition
-- "Try Example" buttons: BED Example (cyan-glow) + VCF Example (electric) + GFF3 Example (nt-g amber), fetches from `public/samples/`
+- "Try Example" buttons: BED Example (cyan-glow) + VCF Example (electric) + GFF3 Example (nt-g amber), fetches from `public/samples/`. All examples are Human (GRCh38) — species picker is skipped, loads directly
 - 3 feature cards: LiftOver, Merge & Sort, Annotate
 - Species & assembly picker: Two-step glass modal — species grid (8 organisms) → assembly buttons. Single-assembly species skip second step
 - Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`, `.gz` (gzip-compressed variants)
