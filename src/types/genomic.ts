@@ -37,7 +37,7 @@ export const SPECIES_LIST: SpeciesConfig[] = [
   {
     id: "rat",
     displayName: "Rat",
-    ensemblName: "rat",
+    ensemblName: "rattus_norvegicus",
     assemblies: [
       { name: "mRatBN7.2", ucscDb: "rn7", label: "mRatBN7.2 (rn7)" },
     ],
