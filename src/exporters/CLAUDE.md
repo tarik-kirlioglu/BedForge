@@ -1,6 +1,6 @@
 # exporters/
 
-Converts in-memory row data back to BED/VCF text format and triggers browser download.
+Converts in-memory row data back to BED/VCF/GFF3 text format and triggers browser download.
 
 ## Module Structure
 
@@ -8,12 +8,14 @@ Converts in-memory row data back to BED/VCF text format and triggers browser dow
 |------|---------|
 | `bed-exporter.ts` | `exportBed(rows, format)` → tab-separated BED string matching detected format |
 | `vcf-exporter.ts` | `exportVcf(rows, meta, headerColumns, sampleNames)` → complete VCF with preserved `##` headers |
+| `gff3-exporter.ts` | `exportGff3(rows, directives)` → complete GFF3 with preserved `##` directives |
 | `download.ts` | `downloadFile(content, fileName)` → triggers browser download via Blob + programmatic `<a>` click |
 
 ## Rules
 
 - BED export: tab-separated output matching the detected format (BED3/4/6/12).
 - VCF export: `##` meta lines verbatim → `#CHROM` header → data rows. `INFO_*` columns (from Parse INFO feature) are automatically excluded from export.
+- GFF3 export: `##` directives verbatim → 9 standard columns tab-separated. `ATTR_*` columns (from Parse Attributes feature) are automatically excluded from export.
 - Missing BED fields: `.` for strings, `0` for numbers.
 - Export filenames: `{original}_modified.{ext}` or `{original}_{assembly}.{ext}` after LiftOver.
 - Toolbar export dropdown supports: "Export all" and "Export selected" (if selection exists).

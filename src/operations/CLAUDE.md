@@ -19,7 +19,9 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `variant-type-filter.ts` | Classify variants (SNP/INDEL/MNP/MIXED/OTHER), filter by type | Client |
 | `genotype-filter.ts` | Parse GT field from FORMAT/sample, filter by genotype (0/0, 0/1, 1/1, ./.) | Client |
 | `info-parser.ts` | Scan INFO fields, extract key=value pairs to `INFO_*` columns | Client |
-| `info-column-filter.ts` | Filter rows by parsed `INFO_*` column values (numeric threshold or categorical selection) | Client |
+| `info-column-filter.ts` | Filter rows by parsed `INFO_*` or `ATTR_*` column values (numeric threshold or categorical selection) | Client |
+| `type-filter.ts` | GFF3-specific: scan `type` column for unique feature types, filter by type | Client |
+| `gff3-attribute-parser.ts` | GFF3-specific: scan `attributes` column, extract key=value pairs to `ATTR_*` columns | Client |
 | `find-replace.ts` | Find & replace across rows with scope, case-sensitivity, numeric validation | Client |
 | `validate-coordinates.ts` | Validate BED coordinates (swapped, negative, zero-length, invalid chrom, duplicates) | Client |
 | `intersect.ts` | Intersect/Subtract with another BED file using binary search overlap detection | Client |
@@ -50,7 +52,9 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Variant Type: classifies by REF/ALT length comparison. Multi-allelic → MIXED.
 - Genotype: parses GT from FORMAT field, normalizes phased (|) to unphased (/).
 - INFO Parser: scans `;`-separated key=value pairs, creates `INFO_*` columns. Flags → 1/0.
-- INFO Column Filter: profiles `INFO_*` columns (auto-detect numeric ≥80% threshold vs categorical). Numeric: operator + threshold. Categorical: value set. Missing (`.`) kept/removed via toggle. Uses `deleteRows`.
+- INFO Column Filter: profiles `INFO_*` and `ATTR_*` columns (auto-detect numeric ≥80% threshold vs categorical). Numeric: operator + threshold. Categorical: value set. Missing (`.`) kept/removed via toggle. Uses `deleteRows`.
+- Type Filter (GFF3): scans `type` column for unique feature types with counts. Quick actions: Gene Only, Exon Only, CDS Only. Uses `deleteRows`.
+- Attribute Parser (GFF3): scans `attributes` column for semicolon-separated key=value pairs. Extracts selected keys to `ATTR_*` columns with URL-decoding. Uses `addColumn`.
 - Find & Replace: supports scope (all/selected/column), case-sensitive, numeric validation.
 - Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
 - Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
@@ -74,3 +78,4 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Operations update the store atomically (single call with all changes).
 - Failed rows counted and reported in toast, not thrown.
 - Each operation is a standalone exported function, not a class.
+- All operations use `format: FileFormat` parameter (not `isBed: boolean`) with helpers from `utils/format-helpers.ts`.

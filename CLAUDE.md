@@ -1,6 +1,6 @@
 # BedForge
 
-Visual genomic editor for BED and VCF files. No backend — all bioinformatics operations run via the Ensembl REST API. All data stays in the browser.
+Visual genomic editor for BED, VCF, and GFF3 files. No backend — all bioinformatics operations run via the Ensembl REST API. All data stays in the browser.
 
 ## Tech Stack
 
@@ -36,8 +36,8 @@ src/
 ├── index.css                 # Tailwind + design system tokens + animations
 ├── types/                    # TypeScript type definitions
 ├── stores/                   # Zustand stores (file, selection, operation)
-├── parsers/                  # BED/VCF file parsers
-├── exporters/                # BED/VCF file exporters
+├── parsers/                  # BED/VCF/GFF3 file parsers
+├── exporters/                # BED/VCF/GFF3 file exporters
 ├── api/                      # Ensembl REST API client + rate limiter
 ├── operations/               # Genomic + BED operation orchestrators
 ├── components/
@@ -45,11 +45,11 @@ src/
 │   ├── drop-zone/            # Hero landing + drag & drop + Try Example buttons
 │   ├── table/                # DataGrid, EditableCell
 │   ├── context-menu/         # Right-click genomic menu + SVG icons
-│   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog
+│   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog, TypeFilterDialog, AttributeParserDialog
 │   ├── search/               # SearchBar (Ctrl+F floating search)
 │   └── stats/                # StatsPanel, ChromDistribution, SizeDistribution
 ├── hooks/                    # useKeyboardShortcuts
-└── utils/                    # chromosome.ts, gc-calculator.ts, column-stats.ts, chrom-sizes.ts
+└── utils/                    # chromosome.ts, gc-calculator.ts, column-stats.ts, chrom-sizes.ts, format-helpers.ts
 ```
 
 ## Design System — "Genomic Instrument"
@@ -126,16 +126,20 @@ src/
 |--------|--------|------------------------|
 | BED | 0-based, half-open [start, end) | chr1 100 200 |
 | VCF | 1-based, inclusive | chr1 101 (POS) |
+| GFF3 | 1-based, inclusive [start, end] | chr1 101 200 |
 | Ensembl API | 1-based, inclusive [start, end] | 1:101..200 |
 
 **Conversion rules**:
 - BED → Ensembl: `ensemblStart = bedStart + 1`, `ensemblEnd = bedEnd`
 - Ensembl → BED: `bedStart = ensemblStart - 1`, `bedEnd = ensemblEnd`
 - VCF → Ensembl: Direct mapping (both 1-based)
+- GFF3 → Ensembl: Direct mapping (both 1-based inclusive)
+
+**Format-aware helpers** (`utils/format-helpers.ts`): `getChromColumn()`, `getStartColumn()`, `getEndColumn()`, `isZeroBased()`, `toEnsemblStart()`, `toEnsemblEnd()`, `isBedFamily()`. All operations and API functions use `format: FileFormat` instead of `isBed: boolean`.
 
 ## Chromosome Naming
 
-- BED/VCF: `chr1`, `chrX`, `chrM` / Ensembl: `1`, `X`, `MT`
+- BED/VCF/GFF3: `chr1`, `chrX`, `chrM` / Ensembl: `1`, `X`, `MT`
 - `chr` prefix detected on file load, stripped for API, restored in results
 - Special case: `chrM` ↔ `MT`
 
@@ -151,12 +155,12 @@ src/
 
 1. **Large files**: BED files can have 1M+ rows. TanStack Virtual renders only visible rows.
 2. **Undo history**: Snapshot-based, max 20 entries.
-3. **VCF meta lines**: `##` lines preserved verbatim for round-trip export.
+3. **VCF meta lines**: `##` lines preserved verbatim for round-trip export. GFF3 directives (`##gff-version`, `##sequence-region`, etc.) also preserved.
 4. **API errors**: 400 → skip row. 429 → wait, retry. 503 → notify user.
 5. **File size**: Warning for >50MB files.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
-8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, UCSC Link, Delete, Copy.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, UCSC Link, Delete, Copy.
 9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
 10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
 11. **Search (Ctrl+F)**: Floating search bar, 300ms debounce, searches all visible columns. Matches highlighted in `<mark>` tags. Navigate with Enter/Shift+Enter.
@@ -165,10 +169,14 @@ src/
 14. **Variant Type Filter**: Classifies variants as SNP/INDEL/MNP/MIXED/OTHER. Multi-allelic ALT detection. Quick actions: SNP Only, INDEL Only.
 15. **Genotype Filter**: Parses GT from FORMAT/sample fields. Phase normalization (0|1 → 0/1). Quick actions: Het Only, Hom Alt Only, No Missing.
 16. **INFO Field Parser**: Scans INFO column, extracts key=value pairs to `INFO_*` columns. Flags → 1/0. VCF exporter excludes `INFO_*` columns.
-17. **Statistics Panel**: Toggle via toolbar button. Column stats (numeric/categorical), chromosome distribution (horizontal bars), region size distribution (log-scale histogram, BED only).
+17. **Statistics Panel**: Toggle via toolbar button. Column stats (numeric/categorical), chromosome distribution (horizontal bars), region size distribution (log-scale histogram, BED and GFF3).
 18. **Validate Coordinates (BED)**: Checks swapped start/end, negative coords, zero-length, invalid chrom, duplicates. Auto-fix for swapped/negative/duplicate.
 19. **Intersect / Subtract (BED)**: Load second BED file, binary search overlap detection O(N log M). Intersect (keep overlapping) or Subtract (remove overlapping).
 20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
 21. **UCSC Genome Browser**: Opens selected regions in UCSC. Single region: direct link. Multiple: bounding region + 10% padding.
 22. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.
 23. **INFO Column Filter**: Filter rows by parsed `INFO_*` column values. Auto-detects numeric vs categorical. Numeric: operator (>=, <=, ==, !=) + threshold. Categorical: unique value checklist. Missing (`.`) toggle. Only shown in context menu when INFO_* columns exist.
+24. **GFF3 format**: 9-column TSV (seqid, source, type, start, end, score, strand, phase, attributes). 1-based inclusive coordinates. `##` directives preserved for round-trip. Attributes are semicolon-separated key=value pairs (URL-encoded).
+25. **GFF3 Type Filter**: Scans `type` column for unique feature types with counts. Quick actions: Gene Only, Exon Only, CDS Only.
+26. **GFF3 Attribute Parser**: Scans `attributes` column, extracts key=value pairs to `ATTR_*` columns. URL-decodes values. GFF3 exporter excludes `ATTR_*` columns.
+27. **GFF3 Attribute Column Filter**: Reuses `InfoColumnFilterDialog` — `getInfoColumns()` returns both `INFO_*` and `ATTR_*` columns. Only shown when `ATTR_*` columns exist (after Parse Attributes).

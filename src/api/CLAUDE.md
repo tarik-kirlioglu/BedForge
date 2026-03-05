@@ -8,9 +8,9 @@ Ensembl REST API client layer with rate limiting, retry logic, and typed endpoin
 |------|---------|
 | `throttle.ts` | Token-bucket rate limiter: 14 req/s singleton with queue-based waiting |
 | `ensembl-client.ts` | `ensemblFetch<T>(path)`: base HTTP client with throttle, retry on 429, `EnsemblApiError` class |
-| `liftover.ts` | `liftOverRegion(chrom, start, end, source, target, isBed)` → mapped coordinates or null |
-| `overlap.ts` | `getGeneOverlaps(chrom, start, end, assembly, isBed)` → gene features array |
-| `sequence.ts` | `getSequence(chrom, start, end, assembly, isBed)` → DNA sequence string |
+| `liftover.ts` | `liftOverRegion(chrom, start, end, source, target, format)` → mapped coordinates or null |
+| `overlap.ts` | `getGeneOverlaps(chrom, start, end, assembly, format)` → gene features array |
+| `sequence.ts` | `getSequence(chrom, start, end, assembly, format)` → DNA sequence string |
 
 ## API Base
 
@@ -30,11 +30,12 @@ Ensembl REST API client layer with rate limiting, retry logic, and typed endpoin
 
 ## Coordinate Conversion (CRITICAL)
 
-All API functions receive coordinates in the file's native format and convert internally:
+All API functions receive coordinates in the file's native format and convert internally using `toEnsemblStart()`/`toEnsemblEnd()` from `utils/format-helpers.ts`:
 - BED (0-based half-open): `ensemblStart = start + 1`, `ensemblEnd = end`
 - VCF (1-based): direct mapping
+- GFF3 (1-based inclusive): direct mapping
 
-Results are returned in Ensembl's 1-based format — callers convert back.
+The `format: FileFormat` parameter replaced the old `isBed: boolean` parameter. Results are returned in Ensembl's 1-based format — callers convert back.
 
 ## Chromosome Normalization
 

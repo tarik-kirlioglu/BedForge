@@ -6,7 +6,7 @@ Zustand stores for application state management.
 
 | File | Purpose |
 |------|---------|
-| `useFileStore.ts` | Central store: rows, file metadata, format, assembly, useChrPrefix, undo/redo history, VCF meta. Actions: loadFile, updateCell, deleteRows, updateRows, addColumn, addRow, undo, redo, reset |
+| `useFileStore.ts` | Central store: rows, file metadata, format, assembly, useChrPrefix, undo/redo history, VCF meta, GFF3 directives. Actions: loadFile, updateCell, deleteRows, updateRows, addColumn, addRow, undo, redo, reset |
 | `useSelectionStore.ts` | Row/cell selection: `selectedRowIndices` (Set), `activeCell`, toggle/range/selectAll/clear |
 | `useOperationStore.ts` | Running operation state: isRunning, operationName, progress {completed, total}, isCancelled |
 | `useSearchStore.ts` | Search/Find state: isOpen, query, matchIndices, currentMatchIndex. Actions: open, close, setQuery, setMatches, nextMatch, prevMatch |
@@ -27,7 +27,7 @@ Zustand stores for application state management.
 ## Data Flow
 
 ```
-File Drop → useFileStore.loadFile() → parsers → rows stored
+File Drop → useFileStore.loadFile() → parsers (BED/VCF/GFF3) → rows stored
 Cell Edit → useFileStore.updateCell() → push history → mutate row
 API Operation → useOperationStore.startOperation() → runner → useFileStore.updateRows()
 Client Operation → useFileStore.setState() directly (sort, merge, etc.)
