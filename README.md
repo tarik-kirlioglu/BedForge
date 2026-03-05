@@ -9,7 +9,7 @@ All bioinformatics operations run in the browser via the [Ensembl REST API](http
 
 Working with BED, VCF, and GFF3 files usually means switching between command-line tools (`bedtools`, `bcftools`, `awk`), writing one-off scripts, and losing track of intermediate files. BedForge puts the most common genomic operations behind a right-click menu with full undo/redo, live preview, and instant feedback.
 
-- **Drag & drop** a BED, VCF, or GFF3 file, pick your reference assembly, and start editing.
+- **Drag & drop** a BED, VCF, or GFF3 file, pick your species and assembly, and start editing.
 - **Right-click** any row for context-aware operations (different menus for BED, VCF, and GFF3).
 - **Undo everything** with Ctrl+Z — every operation is reversible (up to 20 steps).
 - **Export** your cleaned file and move on.
@@ -22,7 +22,7 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 
 | Operation | Description | Source |
 |-----------|-------------|--------|
-| **LiftOver** | Convert coordinates between GRCh37 and GRCh38 | Ensembl API |
+| **LiftOver** | Convert coordinates between assemblies (e.g. GRCh37 ↔ GRCh38) | Ensembl API |
 | **Annotate Genes** | Fetch gene names from Ensembl overlap endpoint; auto-upgrades BED3 to BED4 | Ensembl API |
 | **GC Content** | Calculate GC% for each region; adds `gc_content` column | Ensembl API |
 | **Clean Intergenic** | Remove rows with no gene overlap | Ensembl API |
@@ -101,6 +101,21 @@ Toggle from the toolbar to see:
 
 Conversions between these systems are handled automatically.
 
+### Supported Species
+
+| Species | Assemblies |
+|---------|------------|
+| Human | GRCh38 (hg38), GRCh37 (hg19) |
+| Mouse | GRCm39 (mm39), GRCm38 (mm10) |
+| Rat | mRatBN7.2 (rn7) |
+| Zebrafish | GRCz11 (danRer11) |
+| Fruit fly | BDGP6 (dm6) |
+| C. elegans | WBcel235 (ce11) |
+| Chicken | GRCg7b (galGal6) |
+| Dog | ROS_Cfam_1.0 (canFam6) |
+
+All Ensembl API operations (LiftOver, Annotate Genes, GC Content, Clean Intergenic) work with any supported species. LiftOver is available for species with multiple assemblies (Human, Mouse). UCSC Genome Browser links automatically resolve the correct database.
+
 ---
 
 ## Getting Started
@@ -112,7 +127,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file, and right-click to explore operations.
+Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file, select your species and assembly, and right-click to explore operations.
 
 ### Commands
 

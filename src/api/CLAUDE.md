@@ -8,9 +8,9 @@ Ensembl REST API client layer with rate limiting, retry logic, and typed endpoin
 |------|---------|
 | `throttle.ts` | Token-bucket rate limiter: 14 req/s singleton with queue-based waiting |
 | `ensembl-client.ts` | `ensemblFetch<T>(path)`: base HTTP client with throttle, retry on 429, `EnsemblApiError` class |
-| `liftover.ts` | `liftOverRegion(chrom, start, end, source, target, format)` → mapped coordinates or null |
-| `overlap.ts` | `getGeneOverlaps(chrom, start, end, assembly, format)` → gene features array |
-| `sequence.ts` | `getSequence(chrom, start, end, assembly, format)` → DNA sequence string |
+| `liftover.ts` | `liftOverRegion(chrom, start, end, source, target, format, speciesName)` → mapped coordinates or null |
+| `overlap.ts` | `getGeneOverlaps(chrom, start, end, assembly, format, speciesName)` → gene features array |
+| `sequence.ts` | `getSequence(chrom, start, end, assembly, format, speciesName)` → DNA sequence string |
 
 ## API Base
 
@@ -22,11 +22,12 @@ Ensembl REST API client layer with rate limiting, retry logic, and typed endpoin
 
 | Operation | Endpoint | Separator |
 |-----------|----------|-----------|
-| LiftOver | `GET /map/human/{source}/{chr}:{start}..{end}/{target}` | `..` (double dot) |
-| Gene Overlap | `GET /overlap/region/human/{chr}:{start}-{end}?feature=gene` | `-` (dash) |
-| Sequence | `GET /sequence/region/human/{chr}:{start}..{end}` | `..` (double dot) |
+| LiftOver | `GET /map/{species}/{source}/{chr}:{start}..{end}/{target}` | `..` (double dot) |
+| Gene Overlap | `GET /overlap/region/{species}/{chr}:{start}-{end}?feature=gene` | `-` (dash) |
+| Sequence | `GET /sequence/region/{species}/{chr}:{start}..{end}` | `..` (double dot) |
 
 **Note different separators**: LiftOver/Sequence use `..`, Overlap uses `-`.
+**Species**: `{species}` is the Ensembl species name (e.g., `human`, `mouse`, `drosophila_melanogaster`). Passed as `speciesName` parameter (default: `"human"`).
 
 ## Coordinate Conversion (CRITICAL)
 

@@ -143,6 +143,27 @@ src/
 - `chr` prefix detected on file load, stripped for API, restored in results
 - Special case: `chrM` ↔ `MT`
 
+## Multi-Species Support
+
+BedForge supports 8 model organisms via configurable `SpeciesConfig` in `types/genomic.ts`:
+
+| Species | Ensembl Name | Assemblies |
+|---------|-------------|------------|
+| Human | human | GRCh38, GRCh37 |
+| Mouse | mouse | GRCm39, GRCm38 |
+| Rat | rat | mRatBN7.2 |
+| Zebrafish | zebrafish | GRCz11 |
+| Fruit fly | drosophila_melanogaster | BDGP6.46 |
+| C. elegans | caenorhabditis_elegans | WBcel235 |
+| Chicken | chicken | bGalGal1 |
+| Dog | dog | ROS_Cfam_1.0 |
+
+- Two-step picker on file load: species → assembly (single-assembly species skip second step)
+- `species` and `assembly` stored in `useFileStore`
+- All API operations receive `speciesName` parameter (default: `"human"`)
+- LiftOver only shown for species with 2+ assemblies
+- UCSC links resolve db name from `SpeciesConfig.assemblies[].ucscDb`
+
 ## Ensembl REST API
 
 - Base URL: `https://rest.ensembl.org`
@@ -150,6 +171,7 @@ src/
 - Content-Type: `application/json`
 - On 429: read `Retry-After` header and wait
 - Batch concurrency: 5
+- Species parameter: all endpoints use configurable species name (not hardcoded `"human"`)
 
 ## Important Notes
 
@@ -173,7 +195,7 @@ src/
 18. **Validate Coordinates (BED)**: Checks swapped start/end, negative coords, zero-length, invalid chrom, duplicates. Auto-fix for swapped/negative/duplicate.
 19. **Intersect / Subtract (BED)**: Load second BED file, binary search overlap detection O(N log M). Intersect (keep overlapping) or Subtract (remove overlapping).
 20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
-21. **UCSC Genome Browser**: Opens selected regions in UCSC. Single region: direct link. Multiple: bounding region + 10% padding.
+21. **UCSC Genome Browser**: Opens selected regions in UCSC. Single region: direct link. Multiple: bounding region + 10% padding. UCSC db resolved from species config.
 22. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.
 23. **INFO Column Filter**: Filter rows by parsed `INFO_*` column values. Auto-detects numeric vs categorical. Numeric: operator (>=, <=, ==, !=) + threshold. Categorical: unique value checklist. Missing (`.`) toggle. Only shown in context menu when INFO_* columns exist.
 24. **GFF3 format**: 9-column TSV (seqid, source, type, start, end, score, strand, phase, attributes). 1-based inclusive coordinates. `##` directives preserved for round-trip. Attributes are semicolon-separated key=value pairs (URL-encoded).

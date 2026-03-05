@@ -32,14 +32,14 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Drop chamber: Dashed border area with `.glow-border` on drag-over, scale transition
 - "Try Example" buttons: BED Example (cyan-glow) + VCF Example (electric) + GFF3 Example (nt-g amber), fetches from `public/samples/`
 - 3 feature cards: LiftOver, Merge & Sort, Annotate
-- Assembly picker: Glass modal with GRCh37/GRCh38 buttons
+- Species & assembly picker: Two-step glass modal — species grid (8 organisms) → assembly buttons. Single-assembly species skip second step
 - Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`
 - Footer: "Built for bioinformaticians. No backend." + GitHub link icon
 
 ### Toolbar
 - `.glass-strong` surface with brand mark on left
 - GitHub link icon (14x14) after brand mark
-- File info: name (mono font), format badge (cyan for BED, electric for VCF, nt-g amber for GFF3), assembly badge (nt-a green), row count
+- File info: name (mono font), format badge (cyan for BED, electric for VCF, nt-g amber for GFF3), species badge (electric blue), assembly badge (nt-a green), row count
 - Live operation progress: pulsing dot + operation name + count (shown during Ensembl API calls)
 - Actions: undo/redo SVG icons, export dropdown (glass menu), close button (danger hover)
 
@@ -62,9 +62,10 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Menu items: 14×14 colored SVG icons, 13px labels, 10px mono sublabels
 - Viewport-aware positioning (flips to stay in bounds)
 - **File-type-aware menu**: shows different operations for BED vs VCF vs GFF3
-  - **BED**: Ensembl API (LiftOver, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, UCSC, Delete, Copy)
-  - **VCF**: Ensembl API (LiftOver, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO, Filter by INFO Column) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
-  - **GFF3**: Ensembl API (LiftOver, Clean Intergenic) → GFF3 Filter (Filter by Type, Parse Attributes, Filter by Attribute Column) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
+  - **BED**: Ensembl API (LiftOver*, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, UCSC, Delete, Copy)
+  - **VCF**: Ensembl API (LiftOver*, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO, Filter by INFO Column) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
+  - **GFF3**: Ensembl API (LiftOver*, Clean Intergenic) → GFF3 Filter (Filter by Type, Parse Attributes, Filter by Attribute Column) → Transform (Sort, Dedup) → Edit (Add Row, UCSC, Delete, Copy)
+  - *LiftOver only shown for species with 2+ assemblies. All API operations pass `speciesName` from store.
 - `useContextMenuStore`: Zustand store for visibility + position
 
 ### FilterColumnDialog (VCF)

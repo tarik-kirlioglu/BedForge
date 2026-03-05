@@ -7,7 +7,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | File | Purpose | Type |
 |------|---------|------|
 | `operation-runner.ts` | Generic batch processor with concurrency, progress, cancellation | Shared |
-| `liftover-operation.ts` | Convert coordinates between assemblies (GRCh37 ↔ GRCh38) | API |
+| `liftover-operation.ts` | Convert coordinates between assemblies (e.g. GRCh37 ↔ GRCh38). Species-aware | API |
 | `annotate-genes.ts` | Fetch gene names from Ensembl, write to name column. Auto-upgrades BED3 → BED4 | API |
 | `clean-intergenic.ts` | Remove rows with no gene overlap | API |
 | `gc-content.ts` | Calculate GC%, add `gc_content` column | API |
@@ -59,7 +59,7 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
 - Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
 - Complement: gap regions from sorted intervals + chrom sizes. REPLACES all rows (BED3).
-- UCSC Link: opens `genome.ucsc.edu` in new tab. Single or bounding region.
+- UCSC Link: opens `genome.ucsc.edu` in new tab. Single or bounding region. Resolves UCSC db from species config.
 
 ## Concurrency & Rate Limiting
 
@@ -79,3 +79,4 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Failed rows counted and reported in toast, not thrown.
 - Each operation is a standalone exported function, not a class.
 - All operations use `format: FileFormat` parameter (not `isBed: boolean`) with helpers from `utils/format-helpers.ts`.
+- API operations accept `speciesName` parameter (default: `"human"`) for multi-species Ensembl queries.
