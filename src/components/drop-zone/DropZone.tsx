@@ -253,7 +253,13 @@ export function DropZone(): React.ReactElement {
           };
         }
 
-        setShowAssemblyPicker(true);
+        const humanSpecies = SPECIES_LIST.find((s) => s.id === "human")!;
+        loadFile(pendingLoadRef.current!);
+        setSpeciesAndAssembly(humanSpecies, "GRCh38");
+        toast.success(
+          `Loaded ${pendingLoadRef.current!.fileName}: ${pendingLoadRef.current!.rows.length.toLocaleString()} rows`,
+        );
+        pendingLoadRef.current = null;
       })
       .catch((err) => {
         toast.error("Failed to load example", { description: String(err) });
@@ -454,7 +460,7 @@ export function DropZone(): React.ReactElement {
 
         {/* ── Try Example ── */}
         <div className="animate-fade-in-up mt-6 flex flex-col items-center gap-2.5">
-          <span className="text-[12px] text-text-muted">or try an example</span>
+          <span className="text-[12px] text-text-muted">or try an example <span className="text-text-ghost">· Human (GRCh38)</span></span>
           <div className="flex gap-2">
             <button
               onClick={() => loadExample("/samples/example.bed")}
