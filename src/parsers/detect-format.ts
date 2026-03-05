@@ -1,11 +1,14 @@
 import type { FileFormat } from "../types/genomic";
+import { stripGzExtension } from "../utils/decompress";
 
 /** Detect file format from filename extension and content */
 export function detectFormat(
   fileName: string,
   content: string,
 ): FileFormat | null {
-  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  // Strip .gz to detect the actual format
+  const baseName = stripGzExtension(fileName);
+  const ext = baseName.split(".").pop()?.toLowerCase() ?? "";
 
   // Extension-based detection
   if (ext === "vcf") return "vcf";

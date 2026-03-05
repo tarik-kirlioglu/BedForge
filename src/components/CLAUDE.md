@@ -33,7 +33,9 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - "Try Example" buttons: BED Example (cyan-glow) + VCF Example (electric) + GFF3 Example (nt-g amber), fetches from `public/samples/`
 - 3 feature cards: LiftOver, Merge & Sort, Annotate
 - Species & assembly picker: Two-step glass modal — species grid (8 organisms) → assembly buttons. Single-assembly species skip second step
-- Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`
+- Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`, `.gz` (gzip-compressed variants)
+- Gzip support: `.vcf.gz`, `.gff3.gz`, `.bed.gz` decompressed via native `DecompressionStream` with loading toast
+- File size limits: soft warning at 50MB, hard block at 500MB (decompressed size). Streaming decompression aborts early if hard limit exceeded
 - Footer: "Built for bioinformaticians. No backend." + GitHub link icon
 
 ### Toolbar

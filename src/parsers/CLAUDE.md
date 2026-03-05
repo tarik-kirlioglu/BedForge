@@ -9,7 +9,7 @@ BED, VCF, and GFF3 file parsers. Converts raw text into typed GenomicRow arrays.
 | `bed-parser.ts` | `parseBed(text)` → `{ format, rows, columns }`. Auto-detects BED3/4/6/12 by column count |
 | `vcf-parser.ts` | `parseVcf(text)` → `{ vcfFile, rows, columns }`. Preserves meta lines verbatim |
 | `gff3-parser.ts` | `parseGff3(text)` → `{ directives, rows, columns }`. Preserves `##` directives verbatim |
-| `detect-format.ts` | `detectFormat(fileName, content)` → `FileFormat \| null`. Extension-based + content sniffing. GFF3 detected before BED fallback |
+| `detect-format.ts` | `detectFormat(fileName, content)` → `FileFormat \| null`. Extension-based + content sniffing. Strips `.gz` extension before detection. GFF3 detected before BED fallback |
 
 ## Critical Rules
 

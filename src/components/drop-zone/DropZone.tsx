@@ -7,6 +7,14 @@ import { parseBed } from "../../parsers/bed-parser";
 import { parseVcf } from "../../parsers/vcf-parser";
 import { parseGff3 } from "../../parsers/gff3-parser";
 import { detectChrPrefix } from "../../utils/chromosome";
+import {
+  isGzipped,
+  stripGzExtension,
+  decompressGz,
+  formatBytes,
+  SOFT_SIZE_LIMIT,
+  HARD_SIZE_LIMIT,
+} from "../../utils/decompress";
 import { SPECIES_LIST } from "../../types/genomic";
 import type { SpeciesConfig } from "../../types/genomic";
 
@@ -24,19 +32,112 @@ export function DropZone(): React.ReactElement {
   const setSpeciesAndAssembly = useFileStore((s) => s.setSpeciesAndAssembly);
   const pendingLoadRef = useRef<Parameters<typeof loadFile>[0] | null>(null);
 
-  const processFile = useCallback(
-    (file: File) => {
-      const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
-      if (!ACCEPTED_EXTENSIONS.includes(ext) && ext !== ".") {
-        toast.error("Unsupported file format", {
-          description: `Expected BED or VCF file, got ${ext}`,
+  const parseAndLoad = useCallback(
+    (content: string, fileName: string) => {
+      // Check decompressed size against hard limit
+      const decompressedBytes = new Blob([content]).size;
+      if (decompressedBytes > HARD_SIZE_LIMIT) {
+        toast.error("File too large", {
+          description: `Decompressed size (${formatBytes(decompressedBytes)}) exceeds ${formatBytes(HARD_SIZE_LIMIT)}. This file cannot be processed in the browser.`,
         });
         return;
       }
 
-      if (file.size > 50 * 1024 * 1024) {
+      if (decompressedBytes > SOFT_SIZE_LIMIT) {
         toast.warning("Large file detected", {
-          description: "Files over 50MB may cause performance issues.",
+          description: `File is ${formatBytes(decompressedBytes)}. Performance may be affected.`,
+        });
+      }
+
+      const format = detectFormat(fileName, content);
+      if (!format) {
+        toast.error("Could not detect file format", {
+          description: "File does not appear to be a valid BED, VCF, or GFF3 file.",
+        });
+        return;
+      }
+
+      // Use original .gz name for display, stripped name for format detection
+      const displayName = fileName;
+
+      if (format === "vcf") {
+        const result = parseVcf(content);
+        const firstChrom = String(result.rows[0]?.CHROM ?? "chr1");
+        pendingLoadRef.current = {
+          fileName: displayName,
+          fileFormat: "vcf",
+          rows: result.rows,
+          columns: result.columns,
+          vcfMeta: result.vcfFile.meta,
+          vcfSampleNames: result.vcfFile.sampleNames,
+          useChrPrefix: detectChrPrefix(firstChrom),
+        };
+      } else if (format === "gff3") {
+        const result = parseGff3(content);
+        const firstSeqid = String(result.rows[0]?.seqid ?? "chr1");
+        pendingLoadRef.current = {
+          fileName: displayName,
+          fileFormat: "gff3",
+          rows: result.rows,
+          columns: result.columns,
+          gff3Directives: result.directives,
+          useChrPrefix: detectChrPrefix(firstSeqid),
+        };
+      } else {
+        const result = parseBed(content);
+        const firstChrom = String(result.rows[0]?.chrom ?? "chr1");
+        pendingLoadRef.current = {
+          fileName: displayName,
+          fileFormat: result.format,
+          rows: result.rows,
+          columns: result.columns,
+          useChrPrefix: detectChrPrefix(firstChrom),
+        };
+      }
+
+      setShowAssemblyPicker(true);
+    },
+    [],
+  );
+
+  const processFile = useCallback(
+    (file: File) => {
+      const baseName = stripGzExtension(file.name);
+      const ext = "." + (baseName.split(".").pop()?.toLowerCase() ?? "");
+      if (!ACCEPTED_EXTENSIONS.includes(ext) && ext !== ".") {
+        toast.error("Unsupported file format", {
+          description: `Expected BED, VCF, or GFF3 file, got ${ext}`,
+        });
+        return;
+      }
+
+      if (isGzipped(file.name)) {
+        const toastId = toast.loading("Decompressing .gz file...");
+        decompressGz(file)
+          .then((content) => {
+            toast.dismiss(toastId);
+            parseAndLoad(content, file.name);
+          })
+          .catch((err) => {
+            toast.dismiss(toastId);
+            toast.error("Decompression failed", {
+              description: String(err instanceof Error ? err.message : err),
+            });
+          });
+        return;
+      }
+
+      // Non-gzipped: check raw file size against hard limit
+      if (file.size > HARD_SIZE_LIMIT) {
+        toast.error("File too large", {
+          description: `File size (${formatBytes(file.size)}) exceeds ${formatBytes(HARD_SIZE_LIMIT)}. This file cannot be processed in the browser.`,
+        });
+        return;
+      }
+
+      if (file.size > SOFT_SIZE_LIMIT) {
+        toast.warning("Large file detected", {
+          description: `File is ${formatBytes(file.size)}. Performance may be affected.`,
         });
       }
 
@@ -47,56 +148,12 @@ export function DropZone(): React.ReactElement {
           toast.error("Failed to read file");
           return;
         }
-
-        const format = detectFormat(file.name, content);
-        if (!format) {
-          toast.error("Could not detect file format", {
-            description: "File does not appear to be a valid BED or VCF file.",
-          });
-          return;
-        }
-
-        if (format === "vcf") {
-          const result = parseVcf(content);
-          const firstChrom = String(result.rows[0]?.CHROM ?? "chr1");
-          pendingLoadRef.current = {
-            fileName: file.name,
-            fileFormat: "vcf",
-            rows: result.rows,
-            columns: result.columns,
-            vcfMeta: result.vcfFile.meta,
-            vcfSampleNames: result.vcfFile.sampleNames,
-            useChrPrefix: detectChrPrefix(firstChrom),
-          };
-        } else if (format === "gff3") {
-          const result = parseGff3(content);
-          const firstSeqid = String(result.rows[0]?.seqid ?? "chr1");
-          pendingLoadRef.current = {
-            fileName: file.name,
-            fileFormat: "gff3",
-            rows: result.rows,
-            columns: result.columns,
-            gff3Directives: result.directives,
-            useChrPrefix: detectChrPrefix(firstSeqid),
-          };
-        } else {
-          const result = parseBed(content);
-          const firstChrom = String(result.rows[0]?.chrom ?? "chr1");
-          pendingLoadRef.current = {
-            fileName: file.name,
-            fileFormat: result.format,
-            rows: result.rows,
-            columns: result.columns,
-            useChrPrefix: detectChrPrefix(firstChrom),
-          };
-        }
-
-        setShowAssemblyPicker(true);
+        parseAndLoad(content, file.name);
       };
       reader.onerror = () => toast.error("Failed to read file");
       reader.readAsText(file);
     },
-    [loadFile, setSpeciesAndAssembly],
+    [parseAndLoad],
   );
 
   function handleSpeciesSelect(sp: SpeciesConfig): void {
@@ -375,6 +432,7 @@ export function DropZone(): React.ReactElement {
               { label: "BED3–12", color: "cyan" },
               { label: "VCF 4.x", color: "electric" },
               { label: "GFF3", color: "amber" },
+              { label: ".gz", color: "muted" },
             ].map((fmt) => (
               <span
                 key={fmt.label}
@@ -383,7 +441,9 @@ export function DropZone(): React.ReactElement {
                     ? "border-cyan-glow/15 bg-cyan-glow/5 text-cyan-glow/70"
                     : fmt.color === "electric"
                       ? "border-electric/15 bg-electric/5 text-electric/70"
-                      : "border-nt-g/15 bg-nt-g/5 text-nt-g/70"
+                      : fmt.color === "amber"
+                        ? "border-nt-g/15 bg-nt-g/5 text-nt-g/70"
+                        : "border-elevated bg-raised/50 text-text-muted"
                 }`}
               >
                 {fmt.label}
@@ -489,7 +549,7 @@ export function DropZone(): React.ReactElement {
       <input
         ref={fileInputRef}
         type="file"
-        accept=".bed,.bed3,.bed4,.bed6,.bed12,.vcf,.gff3,.gff,.txt,.tsv"
+        accept=".bed,.bed3,.bed4,.bed6,.bed12,.vcf,.gff3,.gff,.txt,.tsv,.gz"
         onChange={handleFileInput}
         className="hidden"
       />

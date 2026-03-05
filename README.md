@@ -87,7 +87,7 @@ Toggle from the toolbar to see:
 
 ## Supported Formats
 
-**Input:** `.bed`, `.bed3`-`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`
+**Input:** `.bed`, `.bed3`-`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv` — plus gzip-compressed versions (`.bed.gz`, `.vcf.gz`, `.gff3.gz`)
 **Output:** BED (preserves original format), VCF (preserves `##` meta lines), or GFF3 (preserves `##` directives) — all round-trip safe
 
 ### Coordinate Systems
@@ -127,7 +127,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file, select your species and assembly, and right-click to explore operations.
+Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file (gzip-compressed files also accepted), select your species and assembly, and right-click to explore operations.
 
 ### Commands
 
@@ -162,6 +162,8 @@ npm run lint       # ESLint
 - **Binary search** overlap detection for intersect/subtract operations
 - **Batch API calls** with 5 concurrent requests and token-bucket rate limiting (14 req/s)
 - **Ensembl rate limit compliance**: automatic retry on 429 with `Retry-After` header
+- **Gzip decompression**: Native `DecompressionStream` API — streaming, zero dependencies
+- **File size limits**: Soft warning at 50 MB, hard block at 500 MB (decompressed size). Streaming decompression aborts early if limit is exceeded to protect browser memory
 
 ---
 
