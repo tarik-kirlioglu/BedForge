@@ -35,14 +35,6 @@ export const SPECIES_LIST: SpeciesConfig[] = [
     ],
   },
   {
-    id: "rat",
-    displayName: "Rat",
-    ensemblName: "rattus_norvegicus",
-    assemblies: [
-      { name: "GRCr8", ucscDb: "rn8", label: "GRCr8 (rn8)" },
-    ],
-  },
-  {
     id: "zebrafish",
     displayName: "Zebrafish",
     ensemblName: "zebrafish",

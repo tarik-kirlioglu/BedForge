@@ -148,13 +148,12 @@ src/
 
 ## Multi-Species Support
 
-BedForge supports 8 model organisms via configurable `SpeciesConfig` in `types/genomic.ts`:
+BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/genomic.ts`:
 
 | Species | Ensembl Name | Assemblies |
 |---------|-------------|------------|
 | Human | human | GRCh38, GRCh37 |
 | Mouse | mouse | GRCm39, GRCm38 |
-| Rat | rattus_norvegicus | GRCr8 |
 | Zebrafish | zebrafish | GRCz11 |
 | Fruit fly | drosophila_melanogaster | BDGP6.46 |
 | C. elegans | caenorhabditis_elegans | WBcel235 |
