@@ -26,7 +26,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `validate-coordinates.ts` | Validate BED coordinates (swapped, negative, zero-length, invalid chrom, duplicates) | Client |
 | `intersect.ts` | Intersect/Subtract with another BED file using binary search overlap detection | Client |
 | `complement.ts` | Compute complement (gap) regions given chromosome sizes | Client |
-| `ucsc-link.ts` | Open selected regions in UCSC Genome Browser | Client |
+| `ensembl-link.ts` | Open selected regions in Ensembl Genome Browser | Client |
 
 
 ## API Operation Pattern
@@ -59,7 +59,7 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
 - Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
 - Complement: gap regions from sorted intervals + chrom sizes. REPLACES all rows (BED3).
-- UCSC Link: opens `genome.ucsc.edu` in new tab. Single or bounding region. Resolves UCSC db from species config.
+- Ensembl Link: opens Ensembl Genome Browser in new tab. Single or bounding region. Uses `browserBase` + `browserSpecies` from species config. Coordinates converted to 1-based.
 
 ## Concurrency & Rate Limiting
 

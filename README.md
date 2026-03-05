@@ -55,7 +55,7 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 
 ### Shared Operations
 
-LiftOver, Clean Intergenic, Sort, Remove Duplicates, Find & Replace, Add Row, Delete, Copy to Clipboard, and Open in UCSC Genome Browser work with all file formats.
+LiftOver, Clean Intergenic, Sort, Remove Duplicates, Find & Replace, Add Row, Delete, Copy to Clipboard, and Open in Ensembl Genome Browser work with all file formats.
 
 ### Search & Replace
 
@@ -113,7 +113,7 @@ Conversions between these systems are handled automatically.
 | A. thaliana | TAIR10 (araTha1) |
 | S. cerevisiae | R64-1-1 (sacCer3) |
 
-All Ensembl API operations (LiftOver, Annotate Genes, GC Content, Clean Intergenic) work with any supported species. LiftOver is available for species with multiple assemblies (Human, Mouse). UCSC Genome Browser links automatically resolve the correct database.
+All Ensembl API operations (LiftOver, Annotate Genes, GC Content, Clean Intergenic) work with any supported species. LiftOver is available for species with multiple assemblies (Human, Mouse). Ensembl Genome Browser links automatically resolve the correct species and subdomain.
 
 ---
 

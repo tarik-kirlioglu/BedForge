@@ -142,7 +142,7 @@ src/
 - BED/VCF/GFF3: `chr1`, `chrX`, `chrM` / Ensembl: `1`, `X`, `MT`
 - `chr` prefix detected on file load, stripped for API, restored in results
 - Special case: `chrM` ↔ `MT`
-- S. cerevisiae: Roman numerals `I`–`XVI` + `Mito` (UCSC uses `chrI`–`chrXVI`)
+- S. cerevisiae: Roman numerals `I`–`XVI` + `Mito`
 - A. thaliana: `1`–`5` + `Mt` (mitochondria) + `Pt` (plastid/chloroplast)
 - `CHROM_ORDER` supports numeric (1–22), Roman (I–XVI), and special chromosomes for sorting
 
@@ -164,7 +164,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 - `species` and `assembly` stored in `useFileStore`
 - All API operations receive `speciesName` parameter (default: `"human"`)
 - LiftOver only shown for species with 2+ assemblies
-- UCSC links resolve db name from `SpeciesConfig.assemblies[].ucscDb`
+- Ensembl Browser links use `browserBase` + `browserSpecies` from `SpeciesConfig` (plants.ensembl.org for A. thaliana)
 
 ## Ensembl REST API
 
@@ -184,7 +184,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 5. **File size limits**: Soft limit at 50MB (warning toast), hard limit at 500MB (blocked). For `.gz` files, limits apply to decompressed size. Streaming decompression aborts early if hard limit exceeded.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
-8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, UCSC Link, Delete, Copy.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, Ensembl Browser Link, Delete, Copy.
 9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
 10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
 11. **Search (Ctrl+F)**: Floating search bar, 300ms debounce, searches all visible columns. Matches highlighted in `<mark>` tags. Navigate with Enter/Shift+Enter.
@@ -197,7 +197,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 18. **Validate Coordinates (BED)**: Checks swapped start/end, negative coords, zero-length, invalid chrom, duplicates. Auto-fix for swapped/negative/duplicate.
 19. **Intersect / Subtract (BED)**: Load second BED file, binary search overlap detection O(N log M). Intersect (keep overlapping) or Subtract (remove overlapping).
 20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
-21. **UCSC Genome Browser**: Opens selected regions in UCSC. Single region: direct link. Multiple: bounding region + 10% padding. UCSC db resolved from species config.
+21. **Ensembl Genome Browser**: Opens selected regions in Ensembl Browser. Single region: direct link. Multiple: bounding region + 10% padding. Uses `browserBase` + `browserSpecies` from species config. Coordinates converted to 1-based for Ensembl URL.
 22. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.
 23. **INFO Column Filter**: Filter rows by parsed `INFO_*` column values. Auto-detects numeric vs categorical. Numeric: operator (>=, <=, ==, !=) + threshold. Categorical: unique value checklist. Missing (`.`) toggle. Only shown in context menu when INFO_* columns exist.
 24. **GFF3 format**: 9-column TSV (seqid, source, type, start, end, score, strand, phase, attributes). 1-based inclusive coordinates. `##` directives preserved for round-trip. Attributes are semicolon-separated key=value pairs (URL-encoded).
