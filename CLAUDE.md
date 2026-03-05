@@ -154,7 +154,7 @@ BedForge supports 8 model organisms via configurable `SpeciesConfig` in `types/g
 |---------|-------------|------------|
 | Human | human | GRCh38, GRCh37 |
 | Mouse | mouse | GRCm39, GRCm38 |
-| Rat | rat | mRatBN7.2 |
+| Rat | rattus_norvegicus | GRCr8 |
 | Zebrafish | zebrafish | GRCz11 |
 | Fruit fly | drosophila_melanogaster | BDGP6.46 |
 | C. elegans | caenorhabditis_elegans | WBcel235 |

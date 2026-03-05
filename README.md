@@ -107,7 +107,7 @@ Conversions between these systems are handled automatically.
 |---------|------------|
 | Human | GRCh38 (hg38), GRCh37 (hg19) |
 | Mouse | GRCm39 (mm39), GRCm38 (mm10) |
-| Rat | mRatBN7.2 (rn7) |
+| Rat | GRCr8 (rn8) |
 | Zebrafish | GRCz11 (danRer11) |
 | Fruit fly | BDGP6 (dm6) |
 | C. elegans | WBcel235 (ce11) |
