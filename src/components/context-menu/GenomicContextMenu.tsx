@@ -25,7 +25,7 @@ import { ComplementDialog } from "../operations/ComplementDialog";
 import { InfoColumnFilterDialog } from "../operations/InfoColumnFilterDialog";
 import { TypeFilterDialog } from "../operations/TypeFilterDialog";
 import { AttributeParserDialog } from "../operations/AttributeParserDialog";
-import { openInUCSC } from "../../operations/ucsc-link";
+import { openInEnsembl } from "../../operations/ensembl-link";
 import { isBedFamily } from "../../utils/format-helpers";
 
 interface ContextMenuState {
@@ -231,9 +231,9 @@ export function GenomicContextMenu(): React.ReactElement | null {
     setShowComplementDialog(true);
   }
 
-  function handleUCSCLink(): void {
+  function handleEnsemblLink(): void {
     close();
-    openInUCSC(selectedRows, assembly, fileFormat!, species);
+    openInEnsembl(selectedRows, fileFormat!, species);
   }
 
   function handleAddRow(): void {
@@ -539,10 +539,10 @@ export function GenomicContextMenu(): React.ReactElement | null {
             onClick={handleAddRow}
           />
           <MenuItem
-            label="Open in UCSC"
+            label="Open in Ensembl"
             sublabel={selectedRows.length > 0 ? `${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}` : "Select rows first"}
-            icon={<IconUCSC />}
-            onClick={handleUCSCLink}
+            icon={<IconEnsembl />}
+            onClick={handleEnsemblLink}
             disabled={selectedRows.length === 0}
           />
 
@@ -768,7 +768,7 @@ function IconComplement(): React.ReactElement {
   );
 }
 
-function IconUCSC(): React.ReactElement {
+function IconEnsembl(): React.ReactElement {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06d6a0" strokeWidth="1.5">
       <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />

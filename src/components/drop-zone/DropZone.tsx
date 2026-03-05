@@ -301,7 +301,7 @@ export function DropZone(): React.ReactElement {
                     }`}
                   >
                     <div className={`text-base font-semibold transition-colors ${i === 0 ? "text-cyan-glow" : "text-text-primary group-hover:text-cyan-glow"}`}>{asm.name}</div>
-                    <div className="mt-1 font-mono text-xs text-text-muted">{asm.ucscDb}</div>
+                    <div className="mt-1 font-mono text-xs text-text-muted">{asm.label}</div>
                   </button>
                 ))}
               </div>

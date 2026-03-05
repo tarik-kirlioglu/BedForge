@@ -1,16 +1,16 @@
 import { toast } from "sonner";
 
 import type { GenomicRow, FileFormat, SpeciesConfig } from "../types/genomic";
-import type { Assembly } from "../types/genomic";
 import { getChromColumn, getStartColumn, getEndColumn, isZeroBased } from "../utils/format-helpers";
+import { toEnsemblChrom } from "../utils/chromosome";
 
 /**
- * Open selected regions in UCSC Genome Browser.
+ * Open selected regions in Ensembl Genome Browser.
  * Single region: direct link. Multiple: bounding region with 10% padding.
+ * Ensembl URL uses 1-based inclusive coordinates.
  */
-export function openInUCSC(
+export function openInEnsembl(
   rows: readonly GenomicRow[],
-  assembly: Assembly | null,
   format: FileFormat,
   species?: SpeciesConfig | null,
 ): void {
@@ -19,32 +19,25 @@ export function openInUCSC(
     return;
   }
 
-  // Resolve UCSC database name from species config
-  let db = "hg38";
-  if (species && assembly) {
-    const match = species.assemblies.find((a) => a.name === assembly);
-    if (match) db = match.ucscDb;
-  } else if (assembly === "GRCh37") {
-    db = "hg19";
-  }
+  const browserBase = species?.browserBase ?? "https://www.ensembl.org";
+  const browserSpecies = species?.browserSpecies ?? "Homo_sapiens";
 
   if (rows.length === 1) {
     const row = rows[0]!;
-    const { chrom, start, end } = getUCSCCoords(row, format);
-    const url = `https://genome.ucsc.edu/cgi-bin/hgTracks?db=${db}&position=${encodeURIComponent(`${chrom}:${start}-${end}`)}`;
+    const { chrom, start, end } = getEnsemblCoords(row, format);
+    const url = `${browserBase}/${browserSpecies}/Location/View?r=${encodeURIComponent(`${chrom}:${start}-${end}`)}`;
     window.open(url, "_blank");
     return;
   }
 
   // Multiple rows: compute bounding region per chromosome
-  // Pick the first chromosome's bounding box (if mixed chroms, use bounding of all same-chrom rows)
   const firstChrom = getChromValue(rows[0]!, format);
   const sameChrRows = rows.filter((r) => getChromValue(r, format) === firstChrom);
 
   let minStart = Infinity;
   let maxEnd = -Infinity;
   for (const row of sameChrRows) {
-    const { start, end } = getUCSCCoords(row, format);
+    const { start, end } = getEnsemblCoords(row, format);
     if (start < minStart) minStart = start;
     if (end > maxEnd) maxEnd = end;
   }
@@ -52,10 +45,11 @@ export function openInUCSC(
   // Add 10% padding
   const span = maxEnd - minStart;
   const padding = Math.round(span * 0.1);
-  const paddedStart = Math.max(0, minStart - padding);
+  const paddedStart = Math.max(1, minStart - padding);
   const paddedEnd = maxEnd + padding;
 
-  const url = `https://genome.ucsc.edu/cgi-bin/hgTracks?db=${db}&position=${encodeURIComponent(`${firstChrom}:${paddedStart}-${paddedEnd}`)}`;
+  const ensemblChrom = toEnsemblChrom(firstChrom);
+  const url = `${browserBase}/${browserSpecies}/Location/View?r=${encodeURIComponent(`${ensemblChrom}:${paddedStart}-${paddedEnd}`)}`;
   window.open(url, "_blank");
 
   if (sameChrRows.length < rows.length) {
@@ -70,28 +64,30 @@ function getChromValue(row: GenomicRow, format: FileFormat): string {
   return String(row[col] ?? "");
 }
 
-function getUCSCCoords(
+/**
+ * Get Ensembl 1-based inclusive coordinates from a row.
+ */
+function getEnsemblCoords(
   row: GenomicRow,
   format: FileFormat,
 ): { chrom: string; start: number; end: number } {
-  const chrom = getChromValue(row, format);
+  const rawChrom = getChromValue(row, format);
+  const chrom = toEnsemblChrom(rawChrom);
   const startCol = getStartColumn(format);
   const endCol = getEndColumn(format);
 
   if (isZeroBased(format)) {
-    // BED is 0-based, UCSC URL is also 0-based
+    // BED 0-based half-open → Ensembl 1-based inclusive
     return {
       chrom,
-      start: Number(row[startCol]) || 0,
+      start: (Number(row[startCol]) || 0) + 1,
       end: Number(row[endCol]) || 0,
     };
   }
-  // 1-based formats (VCF, GFF3): UCSC needs 0-based start
-  const startVal = Number(row[startCol]) || 1;
-  const endVal = Number(row[endCol]) || startVal;
+  // VCF/GFF3 already 1-based
   return {
     chrom,
-    start: startVal - 1,
-    end: endVal,
+    start: Number(row[startCol]) || 1,
+    end: Number(row[endCol]) || 1,
   };
 }
