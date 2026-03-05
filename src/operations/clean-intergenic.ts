@@ -15,6 +15,7 @@ export async function runCleanIntergenic(
   assembly: Assembly,
   _useChrPrefix: boolean,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<void> {
   if (targetRows.length === 0) return;
 
@@ -44,7 +45,7 @@ export async function runCleanIntergenic(
         ? start + String(row.REF ?? "").length - 1
         : Number(row[endCol] ?? 0);
 
-      const genes = await getGeneOverlaps(chrom, start, end, assembly, format);
+      const genes = await getGeneOverlaps(chrom, start, end, assembly, format, speciesName);
       return genes.length > 0; // true = genic, false = intergenic
     });
 

@@ -20,17 +20,16 @@ const GRCH37_SIZES: Record<string, number> = {
   "X": 155270560, "Y": 59373566, "MT": 16569,
 };
 
-export type Assembly = "GRCh37" | "GRCh38";
-
 /**
  * Get chromosome sizes for a given assembly.
  * Keys are returned with/without chr prefix based on useChrPrefix.
+ * Currently supports human assemblies (GRCh37, GRCh38).
  */
 export function getChromSizes(
-  assembly: Assembly,
+  assembly: string,
   useChrPrefix: boolean,
 ): Map<string, number> {
-  const source = assembly === "GRCh38" ? GRCH38_SIZES : GRCH37_SIZES;
+  const source = assembly === "GRCh37" ? GRCH37_SIZES : GRCH38_SIZES;
   const result = new Map<string, number>();
 
   for (const [chrom, size] of Object.entries(source)) {

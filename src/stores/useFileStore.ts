@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import type { Assembly, FileFormat, GenomicRow } from "../types/genomic";
+import type { Assembly, FileFormat, GenomicRow, SpeciesConfig } from "../types/genomic";
 import type { Gff3Directive } from "../types/gff3";
 import type { VcfMetaLine } from "../types/vcf";
 
@@ -10,6 +10,7 @@ const MAX_HISTORY = 20;
 interface FileState {
   fileName: string | null;
   fileFormat: FileFormat | null;
+  species: SpeciesConfig | null;
   assembly: Assembly | null;
   useChrPrefix: boolean;
 
@@ -32,7 +33,7 @@ interface FileState {
     gff3Directives?: Gff3Directive[];
     useChrPrefix: boolean;
   }) => void;
-  setAssembly: (assembly: Assembly) => void;
+  setSpeciesAndAssembly: (species: SpeciesConfig, assembly: Assembly) => void;
   updateCell: (rowIndex: number, colKey: string, value: string | number) => void;
   deleteRows: (indices: Set<number>) => void;
   updateRows: (updates: Array<{ index: number; row: Partial<GenomicRow> }>) => void;
@@ -57,6 +58,7 @@ export const useFileStore = create<FileState>()(
   immer((set) => ({
     fileName: null,
     fileFormat: null,
+    species: null,
     assembly: null,
     useChrPrefix: true,
 
@@ -81,11 +83,13 @@ export const useFileStore = create<FileState>()(
         state.useChrPrefix = params.useChrPrefix;
         state.history = [params.rows.map((r) => ({ ...r }))];
         state.historyIndex = 0;
+        state.species = null;
         state.assembly = null;
       }),
 
-    setAssembly: (assembly) =>
+    setSpeciesAndAssembly: (species, assembly) =>
       set((state) => {
+        state.species = species;
         state.assembly = assembly;
       }),
 
@@ -191,6 +195,7 @@ export const useFileStore = create<FileState>()(
       set((state) => {
         state.fileName = null;
         state.fileFormat = null;
+        state.species = null;
         state.assembly = null;
         state.rows = [];
         state.columns = [];

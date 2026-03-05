@@ -17,6 +17,7 @@ export async function runGCContent(
   assembly: Assembly,
   _useChrPrefix: boolean,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<void> {
   if (selectedRows.length === 0) return;
 
@@ -46,7 +47,7 @@ export async function runGCContent(
         ? start + String(row.REF ?? "").length - 1
         : Number(row[endCol] ?? 0);
 
-      const sequence = await getSequence(chrom, start, end, assembly, format);
+      const sequence = await getSequence(chrom, start, end, assembly, format, speciesName);
       return calculateGCContent(sequence);
     });
 

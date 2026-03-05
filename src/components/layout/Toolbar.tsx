@@ -19,6 +19,7 @@ export function Toolbar(props: ToolbarProps): React.ReactElement {
   const { showStats, onToggleStats } = props;
   const fileName = useFileStore((s) => s.fileName);
   const fileFormat = useFileStore((s) => s.fileFormat);
+  const species = useFileStore((s) => s.species);
   const assembly = useFileStore((s) => s.assembly);
   const rows = useFileStore((s) => s.rows);
   const vcfMeta = useFileStore((s) => s.vcfMeta);
@@ -132,6 +133,12 @@ export function Toolbar(props: ToolbarProps): React.ReactElement {
                 : "bg-cyan-glow/10 text-cyan-glow border border-cyan-glow/15"
           }`}>
             {fileFormat}
+          </span>
+        )}
+
+        {species && (
+          <span className="rounded-md border border-electric/15 bg-electric/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-electric">
+            {species.displayName}
           </span>
         )}
 

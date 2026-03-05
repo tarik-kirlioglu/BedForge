@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-import type { GenomicRow, FileFormat } from "../types/genomic";
+import type { GenomicRow, FileFormat, SpeciesConfig } from "../types/genomic";
 import type { Assembly } from "../types/genomic";
 import { getChromColumn, getStartColumn, getEndColumn, isZeroBased } from "../utils/format-helpers";
 
@@ -12,13 +12,21 @@ export function openInUCSC(
   rows: readonly GenomicRow[],
   assembly: Assembly | null,
   format: FileFormat,
+  species?: SpeciesConfig | null,
 ): void {
   if (rows.length === 0) {
     toast.error("No rows selected");
     return;
   }
 
-  const db = assembly === "GRCh37" ? "hg19" : "hg38";
+  // Resolve UCSC database name from species config
+  let db = "hg38";
+  if (species && assembly) {
+    const match = species.assemblies.find((a) => a.name === assembly);
+    if (match) db = match.ucscDb;
+  } else if (assembly === "GRCh37") {
+    db = "hg19";
+  }
 
   if (rows.length === 1) {
     const row = rows[0]!;

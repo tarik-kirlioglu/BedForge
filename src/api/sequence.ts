@@ -19,12 +19,13 @@ export async function getSequence(
   end: number,
   _assembly: Assembly,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<string> {
   const ensemblChrom = toEnsemblChrom(chrom);
   const ensemblStart = toEnsemblStart(start, format);
   const ensemblEnd = toEnsemblEnd(end, format);
 
-  const path = `/sequence/region/human/${ensemblChrom}:${ensemblStart}..${ensemblEnd}?content-type=application/json`;
+  const path = `/sequence/region/${speciesName}/${ensemblChrom}:${ensemblStart}..${ensemblEnd}?content-type=application/json`;
 
   const data = await ensemblFetch<SequenceResponse>(path);
   return data.seq;

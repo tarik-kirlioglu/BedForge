@@ -1,10 +1,88 @@
 import type { BedFormat } from "./bed";
 
-/** Genome assembly versions */
-export type Assembly = "GRCh37" | "GRCh38";
+/** Genome assembly identifier */
+export type Assembly = string;
 
 /** Detected file format */
 export type FileFormat = BedFormat | "vcf" | "gff3";
+
+/** Species configuration for Ensembl API and UCSC links */
+export interface SpeciesConfig {
+  id: string;
+  displayName: string;
+  ensemblName: string;
+  assemblies: Array<{ name: string; ucscDb: string; label: string }>;
+}
+
+/** Supported model organisms */
+export const SPECIES_LIST: SpeciesConfig[] = [
+  {
+    id: "human",
+    displayName: "Human",
+    ensemblName: "human",
+    assemblies: [
+      { name: "GRCh38", ucscDb: "hg38", label: "GRCh38 (hg38)" },
+      { name: "GRCh37", ucscDb: "hg19", label: "GRCh37 (hg19)" },
+    ],
+  },
+  {
+    id: "mouse",
+    displayName: "Mouse",
+    ensemblName: "mouse",
+    assemblies: [
+      { name: "GRCm39", ucscDb: "mm39", label: "GRCm39 (mm39)" },
+      { name: "GRCm38", ucscDb: "mm10", label: "GRCm38 (mm10)" },
+    ],
+  },
+  {
+    id: "rat",
+    displayName: "Rat",
+    ensemblName: "rat",
+    assemblies: [
+      { name: "mRatBN7.2", ucscDb: "rn7", label: "mRatBN7.2 (rn7)" },
+    ],
+  },
+  {
+    id: "zebrafish",
+    displayName: "Zebrafish",
+    ensemblName: "zebrafish",
+    assemblies: [
+      { name: "GRCz11", ucscDb: "danRer11", label: "GRCz11 (danRer11)" },
+    ],
+  },
+  {
+    id: "drosophila",
+    displayName: "Fruit fly",
+    ensemblName: "drosophila_melanogaster",
+    assemblies: [
+      { name: "BDGP6.46", ucscDb: "dm6", label: "BDGP6 (dm6)" },
+    ],
+  },
+  {
+    id: "c_elegans",
+    displayName: "C. elegans",
+    ensemblName: "caenorhabditis_elegans",
+    assemblies: [
+      { name: "WBcel235", ucscDb: "ce11", label: "WBcel235 (ce11)" },
+    ],
+  },
+  {
+    id: "chicken",
+    displayName: "Chicken",
+    ensemblName: "chicken",
+    assemblies: [
+      { name: "bGalGal1", ucscDb: "galGal6", label: "GRCg7b (galGal6)" },
+    ],
+  },
+  {
+    id: "dog",
+    displayName: "Dog",
+    ensemblName: "dog",
+    assemblies: [
+      { name: "ROS_Cfam_1.0", ucscDb: "canFam6", label: "ROS_Cfam_1.0 (canFam6)" },
+    ],
+  },
+];
 
 /** A genomic region (0-based half-open, BED-style) */
 export interface GenomicRegion {

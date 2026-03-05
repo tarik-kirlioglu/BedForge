@@ -18,6 +18,7 @@ export async function runLiftOver(
   targetAssembly: Assembly,
   useChrPrefix: boolean,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<void> {
   if (selectedRows.length === 0) return;
 
@@ -55,6 +56,7 @@ export async function runLiftOver(
         sourceAssembly,
         targetAssembly,
         format,
+        speciesName,
       );
       return mapped;
     });
@@ -88,7 +90,10 @@ export async function runLiftOver(
 
     if (updates.length > 0) {
       useFileStore.getState().updateRows(updates);
-      useFileStore.getState().setAssembly(targetAssembly);
+      const currentSpecies = useFileStore.getState().species;
+      if (currentSpecies) {
+        useFileStore.getState().setSpeciesAndAssembly(currentSpecies, targetAssembly);
+      }
     }
 
     const failCount = selectedRows.length - mappedCount;

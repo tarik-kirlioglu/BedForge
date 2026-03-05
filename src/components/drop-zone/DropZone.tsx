@@ -7,6 +7,8 @@ import { parseBed } from "../../parsers/bed-parser";
 import { parseVcf } from "../../parsers/vcf-parser";
 import { parseGff3 } from "../../parsers/gff3-parser";
 import { detectChrPrefix } from "../../utils/chromosome";
+import { SPECIES_LIST } from "../../types/genomic";
+import type { SpeciesConfig } from "../../types/genomic";
 
 const ACCEPTED_EXTENSIONS = [
   ".bed", ".bed3", ".bed4", ".bed6", ".bed12",
@@ -16,9 +18,10 @@ const ACCEPTED_EXTENSIONS = [
 export function DropZone(): React.ReactElement {
   const [isDragOver, setIsDragOver] = useState(false);
   const [showAssemblyPicker, setShowAssemblyPicker] = useState(false);
+  const [selectedSpecies, setSelectedSpecies] = useState<SpeciesConfig | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadFile = useFileStore((s) => s.loadFile);
-  const setAssembly = useFileStore((s) => s.setAssembly);
+  const setSpeciesAndAssembly = useFileStore((s) => s.setSpeciesAndAssembly);
   const pendingLoadRef = useRef<Parameters<typeof loadFile>[0] | null>(null);
 
   const processFile = useCallback(
@@ -93,19 +96,29 @@ export function DropZone(): React.ReactElement {
       reader.onerror = () => toast.error("Failed to read file");
       reader.readAsText(file);
     },
-    [loadFile, setAssembly],
+    [loadFile, setSpeciesAndAssembly],
   );
 
-  function handleAssemblySelect(assembly: "GRCh37" | "GRCh38"): void {
+  function handleSpeciesSelect(sp: SpeciesConfig): void {
+    if (sp.assemblies.length === 1) {
+      // Single assembly — skip assembly step
+      handleAssemblySelect(sp, sp.assemblies[0]!.name);
+    } else {
+      setSelectedSpecies(sp);
+    }
+  }
+
+  function handleAssemblySelect(sp: SpeciesConfig, assembly: string): void {
     if (pendingLoadRef.current) {
       loadFile(pendingLoadRef.current);
-      setAssembly(assembly);
+      setSpeciesAndAssembly(sp, assembly);
       toast.success(
         `Loaded ${pendingLoadRef.current.fileName}: ${pendingLoadRef.current.rows.length.toLocaleString()} rows`,
       );
       pendingLoadRef.current = null;
     }
     setShowAssemblyPicker(false);
+    setSelectedSpecies(null);
   }
 
   function handleDrop(e: React.DragEvent): void {
@@ -197,7 +210,7 @@ export function DropZone(): React.ReactElement {
         <div className="bg-grid absolute inset-0 opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-void/50 to-void" />
 
-        <div className="animate-fade-in-up glass relative z-10 w-[420px] rounded-2xl p-8 text-center shadow-2xl">
+        <div className="animate-fade-in-up glass relative z-10 w-[460px] rounded-2xl p-8 text-center shadow-2xl">
           {/* DNA icon */}
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-glow/10">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-cyan-glow">
@@ -210,29 +223,66 @@ export function DropZone(): React.ReactElement {
             </svg>
           </div>
 
-          <h2 className="mb-1 text-lg font-semibold text-text-primary">
-            Reference Assembly
-          </h2>
-          <p className="mb-7 text-sm text-text-secondary">
-            Which genome build does this file use?
-          </p>
+          {selectedSpecies ? (
+            <>
+              <h2 className="mb-1 text-lg font-semibold text-text-primary">
+                Reference Assembly
+              </h2>
+              <p className="mb-5 text-sm text-text-secondary">
+                <span className="font-medium text-cyan-glow">{selectedSpecies.displayName}</span> — which genome build?
+              </p>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleAssemblySelect("GRCh37")}
-              className="group flex-1 rounded-xl border border-elevated bg-raised/50 px-4 py-4 text-center transition-all hover:border-cyan-glow/30 hover:bg-raised"
-            >
-              <div className="text-base font-semibold text-text-primary group-hover:text-cyan-glow transition-colors">GRCh37</div>
-              <div className="mt-1 font-mono text-xs text-text-muted">hg19</div>
-            </button>
-            <button
-              onClick={() => handleAssemblySelect("GRCh38")}
-              className="group flex-1 rounded-xl border border-cyan-glow/20 bg-cyan-glow/5 px-4 py-4 text-center transition-all hover:border-cyan-glow/40 hover:bg-cyan-glow/10"
-            >
-              <div className="text-base font-semibold text-cyan-glow">GRCh38</div>
-              <div className="mt-1 font-mono text-xs text-text-secondary">hg38</div>
-            </button>
-          </div>
+              <div className="flex gap-3">
+                {selectedSpecies.assemblies.map((asm, i) => (
+                  <button
+                    key={asm.name}
+                    onClick={() => handleAssemblySelect(selectedSpecies, asm.name)}
+                    className={`group flex-1 rounded-xl border px-4 py-4 text-center transition-all ${
+                      i === 0
+                        ? "border-cyan-glow/20 bg-cyan-glow/5 hover:border-cyan-glow/40 hover:bg-cyan-glow/10"
+                        : "border-elevated bg-raised/50 hover:border-cyan-glow/30 hover:bg-raised"
+                    }`}
+                  >
+                    <div className={`text-base font-semibold transition-colors ${i === 0 ? "text-cyan-glow" : "text-text-primary group-hover:text-cyan-glow"}`}>{asm.name}</div>
+                    <div className="mt-1 font-mono text-xs text-text-muted">{asm.ucscDb}</div>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setSelectedSpecies(null)}
+                className="mt-4 text-xs text-text-muted transition-colors hover:text-text-secondary"
+              >
+                ← Back to species
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 className="mb-1 text-lg font-semibold text-text-primary">
+                Select Species
+              </h2>
+              <p className="mb-5 text-sm text-text-secondary">
+                Which organism does this file belong to?
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                {SPECIES_LIST.map((sp) => (
+                  <button
+                    key={sp.id}
+                    onClick={() => handleSpeciesSelect(sp)}
+                    className="group rounded-xl border border-elevated bg-raised/50 px-4 py-3 text-left transition-all hover:border-cyan-glow/30 hover:bg-raised"
+                  >
+                    <div className="text-sm font-semibold text-text-primary transition-colors group-hover:text-cyan-glow">
+                      {sp.displayName}
+                    </div>
+                    <div className="mt-0.5 font-mono text-[10px] text-text-muted">
+                      {sp.assemblies.map((a) => a.name).join(" / ")}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     );

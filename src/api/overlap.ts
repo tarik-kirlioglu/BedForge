@@ -21,16 +21,15 @@ export async function getGeneOverlaps(
   chrom: string,
   start: number,
   end: number,
-  assembly: Assembly,
+  _assembly: Assembly,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<GeneOverlap[]> {
   const ensemblChrom = toEnsemblChrom(chrom);
   const ensemblStart = toEnsemblStart(start, format);
   const ensemblEnd = toEnsemblEnd(end, format);
 
-  // Use GRCh37-specific server if needed
-  const speciesPath = assembly === "GRCh37" ? "human" : "human";
-  const path = `/overlap/region/${speciesPath}/${ensemblChrom}:${ensemblStart}-${ensemblEnd}?feature=gene;content-type=application/json`;
+  const path = `/overlap/region/${speciesName}/${ensemblChrom}:${ensemblStart}-${ensemblEnd}?feature=gene;content-type=application/json`;
 
   return ensemblFetch<GeneOverlap[]>(path);
 }

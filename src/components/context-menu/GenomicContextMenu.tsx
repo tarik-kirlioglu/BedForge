@@ -46,6 +46,7 @@ export const useContextMenuStore = create<ContextMenuState>()((set) => ({
 
 export function GenomicContextMenu(): React.ReactElement | null {
   const { visible, x, y, close } = useContextMenuStore();
+  const species = useFileStore((s) => s.species);
   const assembly = useFileStore((s) => s.assembly);
   const fileFormat = useFileStore((s) => s.fileFormat);
   const rows = useFileStore((s) => s.rows);
@@ -100,33 +101,38 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const isGff3 = fileFormat === "gff3";
   const hasInfoColumns = isVcf && columns.some((c) => c.startsWith("INFO_"));
   const hasAttrColumns = isGff3 && columns.some((c) => c.startsWith("ATTR_"));
-  const targetAssembly = assembly === "GRCh37" ? "GRCh38" : "GRCh37";
+  // Compute target assembly for LiftOver (swap to the other assembly of the same species)
+  const speciesAssemblies = species?.assemblies ?? [];
+  const otherAssembly = speciesAssemblies.find((a) => a.name !== assembly);
+  const targetAssembly = otherAssembly?.name ?? (assembly === "GRCh37" ? "GRCh38" : "GRCh37");
+  const hasLiftOver = speciesAssemblies.length >= 2;
+  const ensemblName = species?.ensemblName ?? "human";
 
   // ── Handlers ──
 
   function handleLiftOver(): void {
     close();
     if (!assembly) return;
-    runLiftOver(selectedRows, assembly, targetAssembly, useChrPrefix, fileFormat!);
+    runLiftOver(selectedRows, assembly, targetAssembly, useChrPrefix, fileFormat!, ensemblName);
   }
 
   function handleCleanIntergenic(): void {
     close();
     if (!assembly) return;
-    runCleanIntergenic(isVcf ? selectedRows : rows, assembly, useChrPrefix, fileFormat!);
+    runCleanIntergenic(isVcf ? selectedRows : rows, assembly, useChrPrefix, fileFormat!, ensemblName);
   }
 
   function handleGCContent(): void {
     close();
     if (!assembly) return;
-    runGCContent(selectedRows, assembly, useChrPrefix, fileFormat!);
+    runGCContent(selectedRows, assembly, useChrPrefix, fileFormat!, ensemblName);
   }
 
   function handleAnnotateGenes(): void {
     close();
     if (!assembly) return;
     const targets = selectedRows.length > 0 ? selectedRows : rows;
-    runAnnotateGenes(targets, assembly, fileFormat!);
+    runAnnotateGenes(targets, assembly, fileFormat!, ensemblName);
   }
 
   function handleSort(): void {
@@ -227,7 +233,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
   function handleUCSCLink(): void {
     close();
-    openInUCSC(selectedRows, assembly, fileFormat!);
+    openInUCSC(selectedRows, assembly, fileFormat!, species);
   }
 
   function handleAddRow(): void {
@@ -324,13 +330,15 @@ export function GenomicContextMenu(): React.ReactElement | null {
           {/* ── Ensembl API Section ── */}
           <SectionLabel text="Ensembl API" />
 
-          <MenuItem
-            label={`LiftOver → ${targetAssembly}`}
-            sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
-            icon={<IconLiftOver />}
-            onClick={handleLiftOver}
-            disabled={isRunning || selectedRows.length === 0}
-          />
+          {hasLiftOver && (
+            <MenuItem
+              label={`LiftOver → ${targetAssembly}`}
+              sublabel={`${selectedRows.length} region${selectedRows.length !== 1 ? "s" : ""}`}
+              icon={<IconLiftOver />}
+              onClick={handleLiftOver}
+              disabled={isRunning || selectedRows.length === 0}
+            />
+          )}
 
           {isBed && (
             <MenuItem

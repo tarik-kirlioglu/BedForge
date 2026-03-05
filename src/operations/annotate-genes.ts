@@ -24,6 +24,7 @@ export async function runAnnotateGenes(
   targetRows: GenomicRow[],
   _assembly: Assembly,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<void> {
   if (targetRows.length === 0) return;
 
@@ -57,7 +58,7 @@ export async function runAnnotateGenes(
       const ensemblStart = toEnsemblStart(start, format);
       const ensemblEnd = toEnsemblEnd(end, format);
 
-      const path = `/overlap/region/human/${ensemblChrom}:${ensemblStart}-${ensemblEnd}?feature=gene;content-type=application/json`;
+      const path = `/overlap/region/${speciesName}/${ensemblChrom}:${ensemblStart}-${ensemblEnd}?feature=gene;content-type=application/json`;
 
       const genes = await ensemblFetch<GeneFeature[]>(path);
 

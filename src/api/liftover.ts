@@ -38,6 +38,7 @@ export async function liftOverRegion(
   sourceAssembly: Assembly,
   targetAssembly: Assembly,
   format: FileFormat,
+  speciesName = "human",
 ): Promise<LiftOverResult | null> {
   const ensemblChrom = toEnsemblChrom(chrom);
 
@@ -45,7 +46,7 @@ export async function liftOverRegion(
   const ensemblStart = toEnsemblStart(start, format);
   const ensemblEnd = toEnsemblEnd(end, format);
 
-  const path = `/map/human/${sourceAssembly}/${ensemblChrom}:${ensemblStart}..${ensemblEnd}/${targetAssembly}?content-type=application/json`;
+  const path = `/map/${speciesName}/${sourceAssembly}/${ensemblChrom}:${ensemblStart}..${ensemblEnd}/${targetAssembly}?content-type=application/json`;
 
   const data = await ensemblFetch<LiftOverResponse>(path);
 
