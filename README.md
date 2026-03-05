@@ -1,16 +1,16 @@
 # BedForge
 
-**Visual genomic editor for BED and VCF files.**
+**Visual genomic editor for BED, VCF, and GFF3 files.**
 All bioinformatics operations run in the browser via the [Ensembl REST API](https://rest.ensembl.org). No backend, no uploads — your data never leaves your machine.
 
 ---
 
 ## Why BedForge?
 
-Working with BED and VCF files usually means switching between command-line tools (`bedtools`, `bcftools`, `awk`), writing one-off scripts, and losing track of intermediate files. BedForge puts the most common genomic operations behind a right-click menu with full undo/redo, live preview, and instant feedback.
+Working with BED, VCF, and GFF3 files usually means switching between command-line tools (`bedtools`, `bcftools`, `awk`), writing one-off scripts, and losing track of intermediate files. BedForge puts the most common genomic operations behind a right-click menu with full undo/redo, live preview, and instant feedback.
 
-- **Drag & drop** a BED or VCF file, pick your reference assembly, and start editing.
-- **Right-click** any row for context-aware operations (different menus for BED vs VCF).
+- **Drag & drop** a BED, VCF, or GFF3 file, pick your reference assembly, and start editing.
+- **Right-click** any row for context-aware operations (different menus for BED, VCF, and GFF3).
 - **Undo everything** with Ctrl+Z — every operation is reversible (up to 20 steps).
 - **Export** your cleaned file and move on.
 
@@ -45,9 +45,17 @@ Working with BED and VCF files usually means switching between command-line tool
 | **Parse INFO Fields** | Extract key=value pairs from INFO column into `INFO_*` columns. Flags become 1/0 |
 | **Filter by INFO Column** | Filter by any parsed INFO_* column. Auto-detects numeric vs categorical. Numeric mode: operators (>=, <=, ==, !=) + threshold. Categorical mode: value checklist |
 
+### GFF3 Operations
+
+| Operation | Description |
+|-----------|-------------|
+| **Filter by Type** | Filter features by type (gene, mRNA, exon, CDS, etc.) with row counts. Quick actions: Gene Only, Exon Only, CDS Only |
+| **Parse Attributes** | Extract key=value pairs from attributes column into `ATTR_*` columns with URL-decoding |
+| **Filter by Attribute Column** | Filter by any parsed ATTR_* column. Auto-detects numeric vs categorical (same as INFO Column Filter) |
+
 ### Shared Operations
 
-LiftOver, Clean Intergenic, Sort, Remove Duplicates, Find & Replace, Add Row, Delete, Copy to Clipboard, and Open in UCSC Genome Browser work with both BED and VCF files.
+LiftOver, Clean Intergenic, Sort, Remove Duplicates, Find & Replace, Add Row, Delete, Copy to Clipboard, and Open in UCSC Genome Browser work with all file formats.
 
 ### Search & Replace
 
@@ -59,7 +67,7 @@ LiftOver, Clean Intergenic, Sort, Remove Duplicates, Find & Replace, Add Row, De
 Toggle from the toolbar to see:
 - **Column stats** : count, min, max, median, mean, std dev (numeric) or unique values (categorical)
 - **Chromosome distribution** : horizontal bar chart with natural ordering
-- **Region size distribution** : log-scale histogram (BED only)
+- **Region size distribution** : log-scale histogram (BED and GFF3)
 
 ---
 
@@ -79,8 +87,8 @@ Toggle from the toolbar to see:
 
 ## Supported Formats
 
-**Input:** `.bed`, `.bed3`-`.bed12`, `.vcf`, `.txt`, `.tsv`
-**Output:** BED (preserves original format) or VCF (preserves `##` meta lines for round-trip export)
+**Input:** `.bed`, `.bed3`-`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`
+**Output:** BED (preserves original format), VCF (preserves `##` meta lines), or GFF3 (preserves `##` directives) — all round-trip safe
 
 ### Coordinate Systems
 
@@ -88,6 +96,7 @@ Toggle from the toolbar to see:
 |--------|--------|---------|
 | BED | 0-based, half-open [start, end) | `chr1  100  200` |
 | VCF | 1-based, inclusive | `chr1  101` (POS) |
+| GFF3 | 1-based, inclusive [start, end] | `chr1  101  200` |
 | Ensembl API | 1-based, inclusive [start, end] | `1:101..200` |
 
 Conversions between these systems are handled automatically.
@@ -103,7 +112,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173), drop a BED or VCF file, and right-click to explore operations.
+Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file, and right-click to explore operations.
 
 ### Commands
 
