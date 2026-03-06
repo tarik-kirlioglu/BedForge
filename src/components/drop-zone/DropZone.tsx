@@ -494,7 +494,7 @@ export function DropZone(): React.ReactElement {
                 </svg>
               ),
               title: "LiftOver",
-              desc: "hg19 ↔ hg38 coordinate conversion",
+              desc: "Cross-assembly coordinate conversion",
             },
             {
               icon: (
