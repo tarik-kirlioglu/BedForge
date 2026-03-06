@@ -11,7 +11,7 @@ Pure helper functions with no side effects and no React dependencies.
 | `column-stats.ts` | `computeColumnStats(rows, colKey)`: returns `NumericStats` or `CategoricalStats`. Auto-detects type (>80% numeric → numeric). Numeric: min/max/mean/median. Categorical: unique count, top 10 values |
 | `chrom-sizes.ts` | `getChromSizes(assembly, useChrPrefix)`: human GRCh37/GRCh38 built-in sizes, other species use custom input. `parseChromSizes(text)`: custom tab-separated chrom sizes |
 | `format-helpers.ts` | Format-aware column/coordinate resolution: `getChromColumn(format)`, `getStartColumn(format)`, `getEndColumn(format)`, `isZeroBased(format)`, `toEnsemblStart(val, format)`, `toEnsemblEnd(val, format)`, `isBedFamily(format)`. Used across operations, API, and stats |
-| `decompress.ts` | Gzip decompression: `decompressGz(file)` uses native `DecompressionStream` API for streaming decompression. `isGzipped(fileName)`, `stripGzExtension(fileName)`, `formatBytes(bytes)`. Constants: `SOFT_SIZE_LIMIT` (50MB), `HARD_SIZE_LIMIT` (500MB). Streaming aborts early if decompressed size exceeds hard limit |
+| `decompress.ts` | Gzip decompression: `decompressGz(file)` supports both standard gzip and BGZF (blocked gzip from bgzip/samtools). First tries native `DecompressionStream`, falls back to block-by-block decompression by parsing BGZF headers (BC subfield with BSIZE). `isGzipped(fileName)`, `stripGzExtension(fileName)`, `formatBytes(bytes)`. Internal helpers: `readBgzfBlockSize(data, pos)`, `decompressBlock(data)`. Constants: `SOFT_SIZE_LIMIT` (50MB), `HARD_SIZE_LIMIT` (500MB). Aborts early if decompressed size exceeds hard limit |
 
 ## Rules
 
