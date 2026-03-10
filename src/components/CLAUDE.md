@@ -10,7 +10,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 | `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal |
 | `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
 | `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
-| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx`, `VariantTypeDialog.tsx`, `GenotypeFilterDialog.tsx`, `InfoParserDialog.tsx`, `InfoColumnFilterDialog.tsx`, `FindReplaceDialog.tsx`, `ValidationDialog.tsx`, `IntersectDialog.tsx`, `ComplementDialog.tsx`, `TypeFilterDialog.tsx`, `AttributeParserDialog.tsx` | Operation parameter dialogs |
+| `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx`, `VariantTypeDialog.tsx`, `GenotypeFilterDialog.tsx`, `InfoParserDialog.tsx`, `InfoColumnFilterDialog.tsx`, `FindReplaceDialog.tsx`, `ValidationDialog.tsx`, `IntersectDialog.tsx`, `ComplementDialog.tsx`, `TypeFilterDialog.tsx`, `AttributeParserDialog.tsx`, `ChromFilterDialog.tsx` | Operation parameter dialogs |
 | `search/` | `SearchBar.tsx` | Floating Ctrl+F search bar with match counter and navigation |
 | `stats/` | `StatsPanel.tsx`, `ChromDistribution.tsx`, `SizeDistribution.tsx` | Statistics sidebar with column stats, chromosome distribution, and region size histogram |
 
@@ -64,9 +64,9 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Menu items: 14×14 colored SVG icons, 13px labels, 10px mono sublabels
 - Viewport-aware positioning (flips to stay in bounds)
 - **File-type-aware menu**: shows different operations for BED vs VCF vs GFF3
-  - **BED**: Ensembl API (LiftOver*, Annotate Genes, GC Content, Clean Intergenic) → Transform (Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, Ensembl, Delete, Copy)
-  - **VCF**: Ensembl API (LiftOver*, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO, Filter by INFO Column) → Transform (Sort, Dedup) → Edit (Add Row, Ensembl, Delete, Copy)
-  - **GFF3**: Ensembl API (LiftOver*, Clean Intergenic) → GFF3 Filter (Filter by Type, Parse Attributes, Filter by Attribute Column) → Transform (Sort, Dedup) → Edit (Add Row, Ensembl, Delete, Copy)
+  - **BED**: Ensembl API (LiftOver*, Annotate Genes, GC Content, Clean Intergenic) → Transform (Filter by Chromosome, Sort, Dedup, Merge, Extend, Validate, Intersect, Complement) → Edit (Add Row, Ensembl, Delete, Copy)
+  - **VCF**: Ensembl API (LiftOver*, Clean Intergenic) → VCF Filter (by FILTER, QUAL, Variant Type, Genotype, Parse INFO, Filter by INFO Column) → Transform (Filter by Chromosome, Sort, Dedup) → Edit (Add Row, Ensembl, Delete, Copy)
+  - **GFF3**: Ensembl API (LiftOver*, Clean Intergenic) → GFF3 Filter (Filter by Type, Parse Attributes, Filter by Attribute Column) → Transform (Filter by Chromosome, Sort, Dedup) → Edit (Add Row, Ensembl, Delete, Copy)
   - *LiftOver only shown for species with 2+ assemblies. All API operations pass `speciesName` from store.
 - `useContextMenuStore`: Zustand store for visibility + position
 
@@ -101,6 +101,14 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Quick actions: "Select All", "Gene Only", "Exon Only", "CDS Only"
 - Summary bar: "Keeping X of Y rows"
 - CTA: amber-colored "Apply Filter" button
+
+### ChromFilterDialog (Shared)
+- Glass morphism modal with cyan-glow (#06d6a0) accent
+- Shows unique chromosomes as checkboxes with row counts, sorted by `CHROM_ORDER`
+- Quick actions: "Select All", "Deselect All", "Autosomes" (chr1–22), "chr1 Only"
+- Summary bar: "Keeping X of Y rows"
+- CTA: cyan-glow "Apply Filter" button
+- Format-aware: works with BED (chrom), VCF (CHROM), GFF3 (seqid)
 
 ### AttributeParserDialog (GFF3)
 - Glass morphism modal with amber (#f59e0b / nt-g) accent

@@ -45,7 +45,7 @@ src/
 │   ├── drop-zone/            # Hero landing + drag & drop + Try Example buttons (Human/GRCh38 only, skips species picker)
 │   ├── table/                # DataGrid, EditableCell
 │   ├── context-menu/         # Right-click genomic menu + SVG icons
-│   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog, TypeFilterDialog, AttributeParserDialog
+│   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog, TypeFilterDialog, AttributeParserDialog, ChromFilterDialog
 │   ├── search/               # SearchBar (Ctrl+F floating search)
 │   └── stats/                # StatsPanel, ChromDistribution, SizeDistribution
 ├── hooks/                    # useKeyboardShortcuts
@@ -184,7 +184,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 5. **File size limits**: Soft limit at 50MB (warning toast), hard limit at 500MB (blocked). For `.gz` files, limits apply to decompressed size. Streaming decompression aborts early if hard limit exceeded.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
-8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: LiftOver, Clean Intergenic, Sort, Dedup, Add Row, Ensembl Browser Link, Delete, Copy.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: Filter by Chromosome, LiftOver, Clean Intergenic, Sort, Dedup, Add Row, Ensembl Browser Link, Delete, Copy.
 9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
 10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
 11. **Search (Ctrl+F)**: Floating search bar, 300ms debounce, searches all visible columns. Matches highlighted in `<mark>` tags. Navigate with Enter/Shift+Enter.
@@ -204,4 +204,5 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 25. **GFF3 Type Filter**: Scans `type` column for unique feature types with counts. Quick actions: Gene Only, Exon Only, CDS Only.
 26. **GFF3 Attribute Parser**: Scans `attributes` column, extracts key=value pairs to `ATTR_*` columns. URL-decodes values. GFF3 exporter excludes `ATTR_*` columns.
 27. **GFF3 Attribute Column Filter**: Reuses `InfoColumnFilterDialog` — `getInfoColumns()` returns both `INFO_*` and `ATTR_*` columns. Only shown when `ATTR_*` columns exist (after Parse Attributes).
-28. **Gzip (.gz) support**: `.vcf.gz`, `.gff3.gz`, `.bed.gz` files decompressed in-browser. Supports both standard gzip and BGZF (blocked gzip from bgzip/samtools). First tries native `DecompressionStream`; on failure falls back to block-by-block decompression parsing BGZF headers (BC subfield → BSIZE). Extension stripped for format detection. Loading toast shown during decompression. Size limits enforced on decompressed content.
+28. **Chromosome Filter**: Filter rows by chromosome. Shows unique chromosomes as checkboxes with row counts, sorted by `CHROM_ORDER` (natural order). Quick actions: Select All, Deselect All, Autosomes (chr1–22), chr1 Only. Format-aware via `getChromColumn()`. Uses `deleteRows` for undo support. Shared across BED/VCF/GFF3 — shown in Transform section.
+29. **Gzip (.gz) support**: `.vcf.gz`, `.gff3.gz`, `.bed.gz` files decompressed in-browser. Supports both standard gzip and BGZF (blocked gzip from bgzip/samtools). First tries native `DecompressionStream`; on failure falls back to block-by-block decompression parsing BGZF headers (BC subfield → BSIZE). Extension stripped for format detection. Loading toast shown during decompression. Size limits enforced on decompressed content.

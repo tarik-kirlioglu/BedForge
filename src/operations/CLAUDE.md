@@ -21,6 +21,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `info-parser.ts` | Scan INFO fields, extract key=value pairs to `INFO_*` columns | Client |
 | `info-column-filter.ts` | Filter rows by parsed `INFO_*` or `ATTR_*` column values (numeric threshold or categorical selection) | Client |
 | `type-filter.ts` | GFF3-specific: scan `type` column for unique feature types, filter by type | Client |
+| `chrom-filter.ts` | Filter rows by chromosome. Shared across BED/VCF/GFF3. Format-aware via `getChromColumn()` | Client |
 | `gff3-attribute-parser.ts` | GFF3-specific: scan `attributes` column, extract key=value pairs to `ATTR_*` columns | Client |
 | `find-replace.ts` | Find & replace across rows with scope, case-sensitivity, numeric validation | Client |
 | `validate-coordinates.ts` | Validate BED coordinates (swapped, negative, zero-length, invalid chrom, duplicates) | Client |
@@ -55,6 +56,7 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - INFO Column Filter: profiles `INFO_*` and `ATTR_*` columns (auto-detect numeric ≥80% threshold vs categorical). Numeric: operator + threshold. Categorical: value set. Missing (`.`) kept/removed via toggle. Uses `deleteRows`.
 - Type Filter (GFF3): scans `type` column for unique feature types with counts. Quick actions: Gene Only, Exon Only, CDS Only. Uses `deleteRows`.
 - Attribute Parser (GFF3): scans `attributes` column for semicolon-separated key=value pairs. Extracts selected keys to `ATTR_*` columns with URL-decoding. Uses `addColumn`.
+- Chromosome Filter: scans chrom column for unique values with counts, sorted by `CHROM_ORDER`. Quick actions: Autosomes (chr1–22), chr1 Only. Format-aware via `getChromColumn()`. Uses `deleteRows`. Shared across BED/VCF/GFF3.
 - Find & Replace: supports scope (all/selected/column), case-sensitive, numeric validation.
 - Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
 - Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
