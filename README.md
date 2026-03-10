@@ -55,7 +55,16 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 
 ### Shared Operations
 
-LiftOver, Clean Intergenic, Sort, Remove Duplicates, Find & Replace, Add Row, Delete, Copy to Clipboard, and Open in Ensembl Genome Browser work with all file formats.
+| Operation | Description |
+|-----------|-------------|
+| **Filter by Chromosome** | Filter rows by chromosome with checkbox list, natural ordering, and quick actions (Autosomes, chr1 Only) |
+| **LiftOver** | Convert coordinates between assemblies (species with 2+ assemblies) |
+| **Clean Intergenic** | Remove rows with no gene overlap |
+| **Sort** | Natural chromosome order + start + end |
+| **Remove Duplicates** | Deduplicate by coordinates |
+| **Find & Replace** | Scope (all/selected/column), case-sensitive, numeric validation |
+| **Add Row / Delete / Copy** | Basic row editing operations |
+| **Open in Ensembl** | Open selected regions in Ensembl Genome Browser |
 
 ### Search & Replace
 
@@ -128,6 +137,8 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173), drop a BED, VCF, or GFF3 file (gzip-compressed files also accepted), select your species and assembly, and right-click to explore operations. You can also click **Try Example** to instantly load a Human (GRCh38) sample file.
 
+Or visit the live app at **[bedforge.pages.dev](https://bedforge.pages.dev)**.
+
 ### Commands
 
 ```bash
@@ -171,6 +182,10 @@ npm run lint       # ESLint
 BedForge is a fully client-side application. Genomic data is processed entirely in your browser. The only network requests go to the [Ensembl REST API](https://rest.ensembl.org) for operations like LiftOver, gene annotation, GC content, and intergenic filtering. No data is stored or transmitted to any other server.
 
 ---
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
