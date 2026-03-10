@@ -24,6 +24,7 @@ import { IntersectDialog } from "../operations/IntersectDialog";
 import { ComplementDialog } from "../operations/ComplementDialog";
 import { InfoColumnFilterDialog } from "../operations/InfoColumnFilterDialog";
 import { TypeFilterDialog } from "../operations/TypeFilterDialog";
+import { ChromFilterDialog } from "../operations/ChromFilterDialog";
 import { AttributeParserDialog } from "../operations/AttributeParserDialog";
 import { openInEnsembl } from "../../operations/ensembl-link";
 import { isBedFamily } from "../../utils/format-helpers";
@@ -71,6 +72,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   const [showInfoColumnFilterDialog, setShowInfoColumnFilterDialog] = useState(false);
   const [showTypeFilterDialog, setShowTypeFilterDialog] = useState(false);
   const [showAttributeParserDialog, setShowAttributeParserDialog] = useState(false);
+  const [showChromFilterDialog, setShowChromFilterDialog] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -216,6 +218,11 @@ export function GenomicContextMenu(): React.ReactElement | null {
     setShowInfoColumnFilterDialog(true);
   }
 
+  function handleChromFilter(): void {
+    close();
+    setShowChromFilterDialog(true);
+  }
+
   function handleValidate(): void {
     close();
     setShowValidationDialog(true);
@@ -262,7 +269,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
   }
 
   const menuWidth = 280;
-  const menuHeight = isVcf ? (hasInfoColumns ? 600 : 560) : isGff3 ? (hasAttrColumns ? 600 : 540) : 700;
+  const menuHeight = isVcf ? (hasInfoColumns ? 640 : 600) : isGff3 ? (hasAttrColumns ? 640 : 580) : 740;
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
@@ -319,6 +326,10 @@ export function GenomicContextMenu(): React.ReactElement | null {
       <AttributeParserDialog
         visible={showAttributeParserDialog}
         onClose={() => setShowAttributeParserDialog(false)}
+      />
+      <ChromFilterDialog
+        visible={showChromFilterDialog}
+        onClose={() => setShowChromFilterDialog(false)}
       />
 
       {visible && (
@@ -462,6 +473,13 @@ export function GenomicContextMenu(): React.ReactElement | null {
           {/* ── Transform Section ── */}
           <SectionLabel text="Transform" />
 
+          <MenuItem
+            label="Filter by Chromosome"
+            sublabel="chr1, chr2, chrX, ..."
+            icon={<IconChromFilter />}
+            onClick={handleChromFilter}
+            disabled={rows.length === 0}
+          />
           <MenuItem
             label="Sort by Position"
             sublabel="chr1..22, X, Y, M"
@@ -697,6 +715,14 @@ function IconInfo(): React.ReactElement {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
       <circle cx="12" cy="12" r="10" />
       <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconChromFilter(): React.ReactElement {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 6h18M7 12h10M10 18h4" strokeLinecap="round" />
     </svg>
   );
 }
