@@ -63,13 +63,15 @@ export function ChromFilterDialog(props: ChromFilterDialogProps): React.ReactEle
   }
 
   function selectAutosomes(): void {
-    const autosomeRanks = new Set<number>();
-    for (let i = 1; i <= 22; i++) autosomeRanks.add(i);
+    const autosomeNames = new Set<string>();
+    for (let i = 1; i <= 22; i++) {
+      autosomeNames.add(String(i));
+      autosomeNames.add(`chr${i}`);
+    }
 
     const matching = new Set<string>();
     for (const v of chromValues) {
-      const rank = chromRank(v.value);
-      if (autosomeRanks.has(rank)) matching.add(v.value);
+      if (autosomeNames.has(v.value)) matching.add(v.value);
     }
     setSelected(matching);
   }
