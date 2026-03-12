@@ -31,7 +31,6 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 | **Merge Overlapping** | Merge overlapping/adjacent regions (like `bedtools merge`) | Client |
 | **Extend / Slop** | Extend regions upstream/downstream (strand-aware) with presets | Client |
 | **Validate Coordinates** | Detect swapped start/end, negative coords, zero-length, invalid chrom, duplicates. Auto-fix available | Client |
-| **Intersect / Subtract** | Overlap detection with a second BED file using binary search O(N log M) | Client |
 | **Complement** | Generate gap regions from chromosome sizes (GRCh37/GRCh38 built-in or custom) | Client |
 
 ### VCF Operations
@@ -58,6 +57,7 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 | Operation | Description |
 |-----------|-------------|
 | **Filter by Chromosome** | Filter rows by chromosome with checkbox list, natural ordering, and quick actions (Autosomes, chr1 Only) |
+| **Intersect / Subtract** | Compare with a second file (BED/VCF/GFF3). Two-axis controls: Action (keep or remove matching rows) × Match Type (any overlap or exact chrom+start+end). Binary search O(N log M) |
 | **LiftOver** | Convert coordinates between assemblies (species with 2+ assemblies) |
 | **Clean Intergenic** | Remove rows with no gene overlap |
 | **Sort** | Natural chromosome order + start + end |
