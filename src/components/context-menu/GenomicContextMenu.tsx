@@ -525,15 +525,13 @@ export function GenomicContextMenu(): React.ReactElement | null {
             />
           )}
 
-          {isBed && (
-            <MenuItem
-              label="Intersect / Subtract"
-              sublabel="With another BED"
-              icon={<IconIntersect />}
-              onClick={handleIntersect}
-              disabled={rows.length === 0}
-            />
-          )}
+          <MenuItem
+            label="Intersect / Subtract"
+            sublabel={`With another ${fileFormat === "vcf" ? "VCF" : fileFormat === "gff3" ? "GFF3" : "BED"} file`}
+            icon={<IconIntersect />}
+            onClick={handleIntersect}
+            disabled={rows.length === 0}
+          />
 
           {isBed && (
             <MenuItem

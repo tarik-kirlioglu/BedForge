@@ -1,29 +1,46 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
-import type { GenomicRow } from "../types/genomic";
+import type { FileFormat, GenomicRow } from "../types/genomic";
+import { getChromColumn, getStartColumn, getEndColumn, isZeroBased } from "../utils/format-helpers";
 
 interface Interval {
   start: number;
   end: number;
 }
 
+/**
+ * Normalize an interval to half-open [start, end) for uniform overlap detection.
+ * BED is already half-open. VCF (POS only) becomes [POS, POS+1). GFF3 (inclusive) becomes [start, end+1).
+ */
+function toHalfOpen(start: number, end: number, format: FileFormat): { start: number; end: number } {
+  if (isZeroBased(format)) return { start, end };
+  // 1-based inclusive → half-open: [start-1, end)
+  return { start: start - 1, end };
+}
+
 /** Group and sort target intervals by chromosome for binary search */
 function buildIndex(
   targets: GenomicRow[],
+  format: FileFormat,
 ): Map<string, Interval[]> {
   const index = new Map<string, Interval[]>();
+  const chromCol = getChromColumn(format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
 
   for (const row of targets) {
-    const chrom = String(row.chrom ?? "");
-    const start = Number(row.chromStart);
-    const end = Number(row.chromEnd);
-    if (!chrom || isNaN(start) || isNaN(end)) continue;
+    const chrom = String(row[chromCol] ?? "");
+    const rawStart = Number(row[startCol]);
+    const rawEnd = Number(row[endCol]);
+    if (!chrom || isNaN(rawStart) || isNaN(rawEnd)) continue;
+
+    const iv = toHalfOpen(rawStart, rawEnd, format);
 
     if (!index.has(chrom)) {
       index.set(chrom, []);
     }
-    index.get(chrom)!.push({ start, end });
+    index.get(chrom)!.push(iv);
   }
 
   // Sort each chromosome's intervals by start position
@@ -66,56 +83,112 @@ function hasOverlap(
   return false;
 }
 
+/** Build a Set of "chrom:start:end" keys for exact match lookups */
+function buildExactIndex(
+  targets: GenomicRow[],
+  format: FileFormat,
+): Set<string> {
+  const keys = new Set<string>();
+  const chromCol = getChromColumn(format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
+
+  for (const row of targets) {
+    const chrom = String(row[chromCol] ?? "");
+    const start = Number(row[startCol]);
+    const end = Number(row[endCol]);
+    if (!chrom || isNaN(start) || isNaN(end)) continue;
+    keys.add(`${chrom}:${start}:${end}`);
+  }
+
+  return keys;
+}
+
+export type IntersectMode = "intersect" | "subtract" | "exact";
+
 /** Find which rows overlap (or don't) with target intervals */
 export function findOverlaps(
   targets: GenomicRow[],
+  targetFormat: FileFormat,
+  mode: IntersectMode = "intersect",
 ): { overlapping: Set<number>; nonOverlapping: Set<number> } {
   const store = useFileStore.getState();
-  const index = buildIndex(targets);
+  const mainFormat = store.fileFormat!;
+
+  const chromCol = getChromColumn(mainFormat);
+  const startCol = getStartColumn(mainFormat);
+  const endCol = getEndColumn(mainFormat);
 
   const overlapping = new Set<number>();
   const nonOverlapping = new Set<number>();
 
-  for (const row of store.rows) {
-    const chrom = String(row.chrom ?? "");
-    const start = Number(row.chromStart);
-    const end = Number(row.chromEnd);
+  if (mode === "exact") {
+    const exactKeys = buildExactIndex(targets, targetFormat);
 
-    const chromIntervals = index.get(chrom);
-    if (chromIntervals && hasOverlap(chromIntervals, start, end)) {
-      overlapping.add(row._index);
-    } else {
-      nonOverlapping.add(row._index);
+    for (const row of store.rows) {
+      const chrom = String(row[chromCol] ?? "");
+      const start = Number(row[startCol]);
+      const end = Number(row[endCol]);
+      const key = `${chrom}:${start}:${end}`;
+
+      if (exactKeys.has(key)) {
+        overlapping.add(row._index);
+      } else {
+        nonOverlapping.add(row._index);
+      }
+    }
+  } else {
+    const index = buildIndex(targets, targetFormat);
+
+    for (const row of store.rows) {
+      const chrom = String(row[chromCol] ?? "");
+      const rawStart = Number(row[startCol]);
+      const rawEnd = Number(row[endCol]);
+      const iv = toHalfOpen(rawStart, rawEnd, mainFormat);
+
+      const chromIntervals = index.get(chrom);
+      if (chromIntervals && hasOverlap(chromIntervals, iv.start, iv.end)) {
+        overlapping.add(row._index);
+      } else {
+        nonOverlapping.add(row._index);
+      }
     }
   }
 
   return { overlapping, nonOverlapping };
 }
 
-/** Run intersect (keep overlapping) or subtract (remove overlapping) */
+/** Run intersect, subtract, or exact match */
 export function runIntersect(
-  mode: "intersect" | "subtract",
+  mode: IntersectMode,
   targets: GenomicRow[],
+  targetFormat: FileFormat,
 ): void {
   const store = useFileStore.getState();
-  const { overlapping, nonOverlapping } = findOverlaps(targets);
+  const { overlapping, nonOverlapping } = findOverlaps(targets, targetFormat, mode);
 
-  const toRemove = mode === "intersect" ? nonOverlapping : overlapping;
+  const toRemove = mode === "subtract" ? overlapping : nonOverlapping;
 
   if (toRemove.size === 0) {
-    toast.info("No rows affected", {
-      description: mode === "intersect"
-        ? "All rows overlap with the target regions"
-        : "No rows overlap with the target regions",
-    });
+    const descriptions: Record<IntersectMode, string> = {
+      intersect: "All rows overlap with the target regions",
+      subtract: "No rows overlap with the target regions",
+      exact: "All rows have exact matches in the target file",
+    };
+    toast.info("No rows affected", { description: descriptions[mode] });
     return;
   }
+
+  const labels: Record<IntersectMode, string> = {
+    intersect: "Intersect complete",
+    subtract: "Subtract complete",
+    exact: "Exact match complete",
+  };
 
   const kept = store.rows.length - toRemove.size;
   store.deleteRows(toRemove);
 
-  toast.success(
-    mode === "intersect" ? "Intersect complete" : "Subtract complete",
-    { description: `Kept ${kept} rows, removed ${toRemove.size}` },
-  );
+  toast.success(labels[mode], {
+    description: `Kept ${kept} rows, removed ${toRemove.size}`,
+  });
 }
