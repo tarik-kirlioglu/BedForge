@@ -5,7 +5,7 @@ import { parseBed } from "../../parsers/bed-parser";
 import { parseVcf } from "../../parsers/vcf-parser";
 import { parseGff3 } from "../../parsers/gff3-parser";
 import { findOverlaps, runIntersect } from "../../operations/intersect";
-import type { IntersectMode } from "../../operations/intersect";
+import type { IntersectAction, MatchType } from "../../operations/intersect";
 import type { FileFormat, GenomicRow } from "../../types/genomic";
 
 interface IntersectDialogProps {
@@ -40,17 +40,33 @@ function parseByFormat(text: string, format: FileFormat): { rows: GenomicRow[]; 
   return { rows: result.rows, detectedFormat: result.format };
 }
 
+function computePreview(
+  action: IntersectAction,
+  matching: Set<number>,
+  nonMatching: Set<number>,
+): { keep: number; remove: number } {
+  return action === "keep"
+    ? { keep: matching.size, remove: nonMatching.size }
+    : { keep: nonMatching.size, remove: matching.size };
+}
+
 export function IntersectDialog(props: IntersectDialogProps): React.ReactElement | null {
   const { visible, onClose } = props;
   const totalRows = useFileStore((s) => s.rows.length);
   const mainFormat = useFileStore((s) => s.fileFormat);
 
-  const [mode, setMode] = useState<IntersectMode>("intersect");
+  const [action, setAction] = useState<IntersectAction>("keep");
+  const [matchType, setMatchType] = useState<MatchType>("overlap");
   const [targetRows, setTargetRows] = useState<GenomicRow[]>([]);
   const [targetFormat, setTargetFormat] = useState<FileFormat | null>(null);
   const [targetName, setTargetName] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [preview, setPreview] = useState<{ keep: number; remove: number } | null>(null);
+
+  function refreshPreview(rows: GenomicRow[], fmt: FileFormat, a: IntersectAction, m: MatchType): void {
+    const { matching, nonMatching } = findOverlaps(rows, fmt, m);
+    setPreview(computePreview(a, matching, nonMatching));
+  }
 
   const handleFile = useCallback((file: File) => {
     const guessedFormat = detectFormatFromName(file.name, mainFormat!);
@@ -61,16 +77,10 @@ export function IntersectDialog(props: IntersectDialogProps): React.ReactElement
       setTargetRows(rows);
       setTargetFormat(detectedFormat);
       setTargetName(file.name);
-
-      // Compute preview
-      const { overlapping, nonOverlapping } = findOverlaps(rows, detectedFormat, mode);
-      setPreview({
-        keep: mode === "subtract" ? nonOverlapping.size : overlapping.size,
-        remove: mode === "subtract" ? overlapping.size : nonOverlapping.size,
-      });
+      refreshPreview(rows, detectedFormat, action, matchType);
     };
     reader.readAsText(file);
-  }, [mode, mainFormat]);
+  }, [action, matchType, mainFormat]);
 
   function handleDrop(e: React.DragEvent): void {
     e.preventDefault();
@@ -84,21 +94,24 @@ export function IntersectDialog(props: IntersectDialogProps): React.ReactElement
     if (file) handleFile(file);
   }
 
-  function updatePreview(newMode: IntersectMode): void {
-    setMode(newMode);
+  function updateAction(newAction: IntersectAction): void {
+    setAction(newAction);
     if (targetRows.length > 0 && targetFormat) {
-      const { overlapping, nonOverlapping } = findOverlaps(targetRows, targetFormat, newMode);
-      setPreview({
-        keep: newMode === "subtract" ? nonOverlapping.size : overlapping.size,
-        remove: newMode === "subtract" ? overlapping.size : nonOverlapping.size,
-      });
+      refreshPreview(targetRows, targetFormat, newAction, matchType);
+    }
+  }
+
+  function updateMatchType(newMatchType: MatchType): void {
+    setMatchType(newMatchType);
+    if (targetRows.length > 0 && targetFormat) {
+      refreshPreview(targetRows, targetFormat, action, newMatchType);
     }
   }
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault();
     if (targetFormat) {
-      runIntersect(mode, targetRows, targetFormat);
+      runIntersect(action, matchType, targetRows, targetFormat);
     }
     onClose();
   }
@@ -127,46 +140,66 @@ export function IntersectDialog(props: IntersectDialogProps): React.ReactElement
           </div>
         </div>
 
-        {/* Mode toggle */}
-        <div className="mb-4 flex rounded-lg border border-elevated bg-deep p-0.5">
+        {/* Action toggle: Keep / Remove */}
+        <label className="mb-1.5 block text-[9px] uppercase tracking-[0.15em] text-text-muted">Action</label>
+        <div className="mb-3 flex rounded-lg border border-elevated bg-deep p-0.5">
           <button
             type="button"
-            onClick={() => updatePreview("intersect")}
+            onClick={() => updateAction("keep")}
             className={`flex-1 rounded-md px-3 py-1.5 text-center font-mono text-[11px] font-medium transition-all ${
-              mode === "intersect"
+              action === "keep"
                 ? "bg-cyan-glow/15 text-cyan-glow"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            Intersect
+            Intersect (keep matching)
           </button>
           <button
             type="button"
-            onClick={() => updatePreview("subtract")}
+            onClick={() => updateAction("remove")}
             className={`flex-1 rounded-md px-3 py-1.5 text-center font-mono text-[11px] font-medium transition-all ${
-              mode === "subtract"
+              action === "remove"
                 ? "bg-nt-t/15 text-nt-t"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            Subtract
+            Subtract (remove matching)
           </button>
+        </div>
+
+        {/* Match type toggle: Overlap / Exact */}
+        <label className="mb-1.5 block text-[9px] uppercase tracking-[0.15em] text-text-muted">Match type</label>
+        <div className="mb-3 flex rounded-lg border border-elevated bg-deep p-0.5">
           <button
             type="button"
-            onClick={() => updatePreview("exact")}
+            onClick={() => updateMatchType("overlap")}
             className={`flex-1 rounded-md px-3 py-1.5 text-center font-mono text-[11px] font-medium transition-all ${
-              mode === "exact"
+              matchType === "overlap"
                 ? "bg-electric/15 text-electric"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
-            Exact Match
+            Overlap (any overlap)
+          </button>
+          <button
+            type="button"
+            onClick={() => updateMatchType("exact")}
+            className={`flex-1 rounded-md px-3 py-1.5 text-center font-mono text-[11px] font-medium transition-all ${
+              matchType === "exact"
+                ? "bg-electric/15 text-electric"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            Exact (chrom + start + end)
           </button>
         </div>
+
+        {/* Description */}
         <p className="mb-4 text-[10px] text-text-muted">
-          {mode === "intersect" && "Keep rows that overlap with any target region"}
-          {mode === "subtract" && "Remove rows that overlap with any target region"}
-          {mode === "exact" && "Keep rows with exact coordinate match (chrom + start + end)"}
+          {action === "keep" && matchType === "overlap" && "Keep rows that overlap with any target region"}
+          {action === "keep" && matchType === "exact" && "Keep rows with exact coordinate match in target"}
+          {action === "remove" && matchType === "overlap" && "Remove rows that overlap with any target region"}
+          {action === "remove" && matchType === "exact" && "Remove rows with exact coordinate match in target"}
         </p>
 
         {/* Drop zone */}
@@ -238,7 +271,7 @@ export function IntersectDialog(props: IntersectDialogProps): React.ReactElement
             disabled={targetRows.length === 0}
             className="rounded-xl bg-cyan-glow px-5 py-2 text-sm font-semibold text-void transition-all hover:shadow-lg hover:shadow-cyan-glow/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {mode === "intersect" ? "Intersect" : mode === "subtract" ? "Subtract" : "Exact Match"}
+            {action === "keep" ? "Intersect" : "Subtract"}
           </button>
         </div>
       </form>

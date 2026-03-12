@@ -104,14 +104,15 @@ function buildExactIndex(
   return keys;
 }
 
-export type IntersectMode = "intersect" | "subtract" | "exact";
+export type IntersectAction = "keep" | "remove";
+export type MatchType = "overlap" | "exact";
 
-/** Find which rows overlap (or don't) with target intervals */
+/** Find which rows match (or don't) with target intervals */
 export function findOverlaps(
   targets: GenomicRow[],
   targetFormat: FileFormat,
-  mode: IntersectMode = "intersect",
-): { overlapping: Set<number>; nonOverlapping: Set<number> } {
+  matchType: MatchType = "overlap",
+): { matching: Set<number>; nonMatching: Set<number> } {
   const store = useFileStore.getState();
   const mainFormat = store.fileFormat!;
 
@@ -119,10 +120,10 @@ export function findOverlaps(
   const startCol = getStartColumn(mainFormat);
   const endCol = getEndColumn(mainFormat);
 
-  const overlapping = new Set<number>();
-  const nonOverlapping = new Set<number>();
+  const matching = new Set<number>();
+  const nonMatching = new Set<number>();
 
-  if (mode === "exact") {
+  if (matchType === "exact") {
     const exactKeys = buildExactIndex(targets, targetFormat);
 
     for (const row of store.rows) {
@@ -132,9 +133,9 @@ export function findOverlaps(
       const key = `${chrom}:${start}:${end}`;
 
       if (exactKeys.has(key)) {
-        overlapping.add(row._index);
+        matching.add(row._index);
       } else {
-        nonOverlapping.add(row._index);
+        nonMatching.add(row._index);
       }
     }
   } else {
@@ -148,47 +149,43 @@ export function findOverlaps(
 
       const chromIntervals = index.get(chrom);
       if (chromIntervals && hasOverlap(chromIntervals, iv.start, iv.end)) {
-        overlapping.add(row._index);
+        matching.add(row._index);
       } else {
-        nonOverlapping.add(row._index);
+        nonMatching.add(row._index);
       }
     }
   }
 
-  return { overlapping, nonOverlapping };
+  return { matching, nonMatching };
 }
 
-/** Run intersect, subtract, or exact match */
+/** Run intersect or subtract with overlap or exact matching */
 export function runIntersect(
-  mode: IntersectMode,
+  action: IntersectAction,
+  matchType: MatchType,
   targets: GenomicRow[],
   targetFormat: FileFormat,
 ): void {
   const store = useFileStore.getState();
-  const { overlapping, nonOverlapping } = findOverlaps(targets, targetFormat, mode);
+  const { matching, nonMatching } = findOverlaps(targets, targetFormat, matchType);
 
-  const toRemove = mode === "subtract" ? overlapping : nonOverlapping;
+  const toRemove = action === "keep" ? nonMatching : matching;
 
   if (toRemove.size === 0) {
-    const descriptions: Record<IntersectMode, string> = {
-      intersect: "All rows overlap with the target regions",
-      subtract: "No rows overlap with the target regions",
-      exact: "All rows have exact matches in the target file",
-    };
-    toast.info("No rows affected", { description: descriptions[mode] });
+    const matchLabel = matchType === "exact" ? "exact match" : "overlap";
+    const desc = action === "keep"
+      ? `All rows have ${matchLabel} with the target`
+      : `No rows have ${matchLabel} with the target`;
+    toast.info("No rows affected", { description: desc });
     return;
   }
-
-  const labels: Record<IntersectMode, string> = {
-    intersect: "Intersect complete",
-    subtract: "Subtract complete",
-    exact: "Exact match complete",
-  };
 
   const kept = store.rows.length - toRemove.size;
   store.deleteRows(toRemove);
 
-  toast.success(labels[mode], {
+  const actionLabel = action === "keep" ? "Intersect" : "Subtract";
+  const matchLabel = matchType === "exact" ? " (exact)" : "";
+  toast.success(`${actionLabel}${matchLabel} complete`, {
     description: `Kept ${kept} rows, removed ${toRemove.size}`,
   });
 }
