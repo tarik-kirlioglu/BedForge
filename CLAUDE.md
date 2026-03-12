@@ -184,7 +184,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 5. **File size limits**: Soft limit at 50MB (warning toast), hard limit at 500MB (blocked). For `.gz` files, limits apply to decompressed size. Streaming decompression aborts early if hard limit exceeded.
 6. **BED formats**: BED3, BED4, BED6, BED12 — auto-detected by column count.
 7. **Gene annotation**: Ensembl overlap API, protein_coding preferred, auto-upgrades BED3 → BED4.
-8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Intersect, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: Filter by Chromosome, LiftOver, Clean Intergenic, Sort, Dedup, Add Row, Ensembl Browser Link, Delete, Copy.
+8. **File-type-aware context menu**: BED files get Annotate Genes, GC Content, Merge, Extend/Slop, Validate, Complement. VCF files get Filter by FILTER/QUAL/Variant Type/Genotype, Parse INFO, Filter by INFO Column. GFF3 files get Filter by Type, Parse Attributes, Filter by Attribute Column. Shared: Filter by Chromosome, Intersect/Subtract, LiftOver, Clean Intergenic, Sort, Dedup, Add Row, Ensembl Browser Link, Delete, Copy.
 9. **VCF FILTER filtering**: Shows unique FILTER values with counts, "PASS Only" shortcut. Uses `deleteRows` for undo support.
 10. **VCF QUAL filtering**: Min threshold with presets (Q10–Q60). Rows with QUAL="." (missing) are always kept.
 11. **Search (Ctrl+F)**: Floating search bar, 300ms debounce, searches all visible columns. Matches highlighted in `<mark>` tags. Navigate with Enter/Shift+Enter.
@@ -195,7 +195,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 16. **INFO Field Parser**: Scans INFO column, extracts key=value pairs to `INFO_*` columns. Flags → 1/0. VCF exporter excludes `INFO_*` columns.
 17. **Statistics Panel**: Toggle via toolbar button. Column stats (numeric/categorical), chromosome distribution (horizontal bars), region size distribution (log-scale histogram, BED and GFF3).
 18. **Validate Coordinates (BED)**: Checks swapped start/end, negative coords, zero-length, invalid chrom, duplicates. Auto-fix for swapped/negative/duplicate.
-19. **Intersect / Subtract (BED)**: Load second BED file, binary search overlap detection O(N log M). Intersect (keep overlapping) or Subtract (remove overlapping).
+19. **Intersect / Subtract / Exact Match**: Load second file (same format), binary search overlap detection O(N log M). Three modes: Intersect (keep overlapping), Subtract (remove overlapping), Exact Match (keep only rows with identical chrom+start+end). Format-aware via `format-helpers`: supports BED, VCF, and GFF3. Coordinates normalized to half-open for uniform overlap detection.
 20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
 21. **Ensembl Genome Browser**: Opens selected regions in Ensembl Browser. Single region: direct link. Multiple: bounding region + 10% padding. Uses `browserBase` + `browserSpecies` from species config. Coordinates converted to 1-based for Ensembl URL.
 22. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.

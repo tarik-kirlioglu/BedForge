@@ -25,7 +25,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `gff3-attribute-parser.ts` | GFF3-specific: scan `attributes` column, extract key=value pairs to `ATTR_*` columns | Client |
 | `find-replace.ts` | Find & replace across rows with scope, case-sensitivity, numeric validation | Client |
 | `validate-coordinates.ts` | Validate BED coordinates (swapped, negative, zero-length, invalid chrom, duplicates) | Client |
-| `intersect.ts` | Intersect/Subtract with another BED file using binary search overlap detection | Client |
+| `intersect.ts` | Intersect/Subtract/Exact Match with another file (BED/VCF/GFF3). Format-aware, coordinate-normalized | Client |
 | `complement.ts` | Compute complement (gap) regions given chromosome sizes | Client |
 | `ensembl-link.ts` | Open selected regions in Ensembl Genome Browser | Client |
 
@@ -59,7 +59,7 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Chromosome Filter: scans chrom column for unique values with counts, sorted by `CHROM_ORDER`. Quick actions: Autosomes (chr1–22), chr1 Only. Format-aware via `getChromColumn()`. Uses `deleteRows`. Shared across BED/VCF/GFF3.
 - Find & Replace: supports scope (all/selected/column), case-sensitive, numeric validation.
 - Validate: checks swapped, negative, zero-length, invalid-chrom, duplicate. Auto-fix available.
-- Intersect/Subtract: binary search O(N log M) overlap detection with second BED file.
+- Intersect/Subtract/Exact Match: binary search O(N log M) overlap detection. Format-aware (BED/VCF/GFF3) via `format-helpers`. Coordinates normalized to half-open (`toHalfOpen`): BED as-is, VCF `[POS, POS+1)`, GFF3 `[start-1, end)`. Exact Match uses `chrom:start:end` key lookup (Set-based O(1)). Three modes: Intersect (keep overlapping), Subtract (remove overlapping), Exact Match (keep identical coordinates).
 - Complement: gap regions from sorted intervals + chrom sizes. REPLACES all rows (BED3).
 - Ensembl Link: opens Ensembl Genome Browser in new tab. Single or bounding region. Uses `browserBase` + `browserSpecies` from species config. Coordinates converted to 1-based.
 
