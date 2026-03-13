@@ -10,7 +10,7 @@ Zustand stores for application state management.
 | `useSelectionStore.ts` | Row/cell selection: `selectedRowIndices` (Set), `activeCell`, toggle/range/selectAll/clear |
 | `useOperationStore.ts` | Running operation state: isRunning, operationName, progress {completed, total}, isCancelled |
 | `useSearchStore.ts` | Search/Find state: isOpen, query, matchIndices, currentMatchIndex. Actions: open, close, setQuery, setMatches, nextMatch, prevMatch |
-| `useBatchStore.ts` | Batch mode state: isActive, step (files/operation/processing/done), files[], fileFormat, species, assembly, operation, isRunning, progress, results[]. Actions: enterBatchMode, exitBatchMode, addFiles, removeFile, setOperation, startProcessing, cancelProcessing, exportZip. Contains `applyOperation()` dispatcher for all pure operation variants |
+| `useBatchStore.ts` | Batch mode state: isActive, step (files/operation/processing/done), files[], fileFormat, species, assembly, pipeline (BatchPipelineStep[]), isRunning, progress, results[]. Actions: enterBatchMode, exitBatchMode, addFiles, removeFile, addPipelineStep, removePipelineStep, reorderPipeline, startProcessing, cancelProcessing, exportZip. Contains `applyOperation()` dispatcher for all pure operation variants. Pipeline: chains multiple operations sequentially per file, threading rows/columns/format through each step |
 
 ## Rules
 
@@ -34,7 +34,7 @@ API Operation → useOperationStore.startOperation() → runner → useFileStore
 Client Operation → useFileStore.setState() directly (sort, merge, etc.)
 Selection → useSelectionStore.toggleRow() / selectRange() / setSelectedRows()
 
-Batch Mode → useBatchStore.enterBatchMode() → addFiles → setOperation → startProcessing
-  → parseFileFromDisk per file → applyOperation (pure) → exportFileContent → results[]
+Batch Mode → useBatchStore.enterBatchMode() → addFiles → addPipelineStep (×N) → startProcessing
+  → parseFileFromDisk per file → applyOperation per pipeline step (chain) → exportFileContent → results[]
   → exportZip → downloadBatchZip (JSZip)
 ```

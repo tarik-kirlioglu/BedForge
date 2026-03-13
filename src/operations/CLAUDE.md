@@ -48,7 +48,7 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Push to undo history before modifying, so Ctrl+Z works.
 - Merge reduces to BED3 format (name/score/strand cannot be meaningfully merged).
 - Extend/Slop is strand-aware: minus strand reverses upstream/downstream.
-- Sort uses shared `chromRank()` from `utils/chromosome.ts`: numeric chromosomes by value, then X=23, Y=24, M=25.
+- Sort uses shared `chromRank()` from `utils/chromosome.ts`: species-aware ordering. Standard: chr1–22 then X=23, Y=24, M=25. S. cerevisiae: Roman numeral ordering (X=10). `runSort(format, speciesId?)` and `sortRows(rows, format, speciesId?)` accept optional species ID.
 - VCF FILTER: shows unique values with counts, user selects which to keep. Uses `deleteRows`.
 - VCF QUAL: threshold-based, rows with QUAL="." (missing) are always kept.
 - Variant Type: classifies by REF/ALT length comparison. Multi-allelic → MIXED.
@@ -81,7 +81,7 @@ Each operation module exports a **store-free pure function** alongside the exist
 
 | Module | Pure Export |
 |--------|------------|
-| `sort-rows.ts` | `sortRows(rows, format) → GenomicRow[]` |
+| `sort-rows.ts` | `sortRows(rows, format, speciesId?) → GenomicRow[]` |
 | `remove-duplicates.ts` | `removeDuplicateRows(rows, format) → GenomicRow[]` |
 | `merge-regions.ts` | `mergeRegionRows(rows) → GenomicRow[]` |
 | `extend-regions.ts` | `extendRegionRows(rows, upstream, downstream, format) → GenomicRow[]` |

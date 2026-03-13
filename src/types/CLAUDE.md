@@ -10,7 +10,7 @@ TypeScript type definitions shared across the entire application.
 | `vcf.ts` | VCF types: `VcfMetaLine`, `VcfRow`, `VcfFile`, `VCF_FIXED_COLUMNS` constant |
 | `gff3.ts` | GFF3 types: `GFF3_COLUMNS` constant, `Gff3Directive` interface |
 | `genomic.ts` | Shared types: `GenomicRow` (universal table row), `Assembly` (string), `FileFormat` (includes `"gff3"`), `GenomicRegion`, `SpeciesConfig`, `SPECIES_LIST` (8 model organisms) |
-| `batch.ts` | Batch mode types: `BatchFileEntry`, `BatchFileStatus`, `BatchOperationId`, `BatchOperationConfig`, `BatchProgress`, `ParsedFile` |
+| `batch.ts` | Batch mode types: `BatchFileEntry`, `BatchFileStatus`, `BatchOperationId`, `BatchOperationConfig`, `BatchPipelineStep`, `BatchProgress` (with `currentStepIndex`/`totalSteps`/`currentStepName`), `ParsedFile` |
 | `table.ts` | Table UI types: `CellPosition`, `SortDirection` |
 
 ## Rules

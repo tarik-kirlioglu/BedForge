@@ -7,7 +7,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 | Directory | Components | Purpose |
 |-----------|-----------|---------|
 | `layout/` | `AppShell.tsx`, `Toolbar.tsx` | Top-level layout with triple routing (batch/editor/dropzone), glass-strong toolbar, brand mark, operation progress, export dropdown |
-| `batch/` | `BatchShell.tsx`, `BatchDropZone.tsx`, `BatchOperationPicker.tsx`, `BatchProgress.tsx` | Batch mode wizard: multi-file upload → operation picker → progress → ZIP export |
+| `batch/` | `BatchShell.tsx`, `BatchDropZone.tsx`, `BatchPipelineBuilder.tsx`, `BatchProgress.tsx` | Batch mode wizard: multi-file upload → pipeline builder → progress → ZIP export |
 | `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal, Batch Mode button |
 | `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
 | `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
@@ -107,7 +107,7 @@ React components organized by feature area. All styled with the "Genomic Instrum
 
 ### ChromFilterDialog (Shared)
 - Glass morphism modal with cyan-glow (#06d6a0) accent
-- Shows unique chromosomes as checkboxes with row counts, sorted by `CHROM_ORDER`
+- Shows unique chromosomes as checkboxes with row counts, sorted by `chromRank()` (species-aware)
 - Quick actions: "Select All", "Deselect All", "Autosomes" (chr1–22), "chr1 Only"
 - Summary bar: "Keeping X of Y rows"
 - CTA: cyan-glow "Apply Filter" button
@@ -135,15 +135,18 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - `multiple` attribute on file input for multi-select
 - "Next" button when files loaded and species selected
 
-#### BatchOperationPicker (operation step)
-- Format-aware operation grid (filters by bed/vcf/gff3)
-- Operation cards with description and "API" badge for Ensembl operations
-- `OperationParams` sub-component for parameter configuration (Extend upstream/downstream, Filter QUAL threshold, LiftOver target assembly, Find & Replace search/replace, Intersect file upload, Complement chrom sizes, etc.)
-- "Start Processing" CTA button
+#### BatchPipelineBuilder (operation step)
+- Pipeline builder for chaining multiple operations sequentially
+- Top section: ordered pipeline step list with step number badges, param summaries, move up/down buttons, remove (×) button
+- Bottom section: "Add Step" operation grid (format-aware, filters by bed/vcf/gff3)
+- Format tracking through pipeline: operations that change format (merge → BED3, complement → BED3) update available ops for next step via `getAvailableOpsForFormat()` / `getOutputFormat()`
+- `OperationParams` sub-component for parameter configuration (Extend upstream/downstream, Filter QUAL threshold, LiftOver target assembly, Find & Replace search/replace, etc.)
+- "Add to Pipeline" button appends step, "Run Pipeline" CTA starts processing
 
 #### BatchProgress (processing/done steps)
 - File list with `StatusIcon` per file (spinner/checkmark/X/dash)
 - Overall progress bar
+- Step-level progress: "Step 2/4: Extending..." shown during multi-step pipeline processing
 - Row count changes displayed (original → result count)
 - Cancel button during processing
 - "Download ZIP" button when done, "Done" button to exit batch mode

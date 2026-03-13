@@ -46,7 +46,7 @@ src/
 │   ├── drop-zone/            # Hero landing + drag & drop + Try Example buttons (Human/GRCh38 only, skips species picker)
 │   ├── table/                # DataGrid, EditableCell
 │   ├── context-menu/         # Right-click genomic menu + SVG icons
-│   ├── batch/                # BatchShell, BatchDropZone, BatchOperationPicker, BatchProgress
+│   ├── batch/                # BatchShell, BatchDropZone, BatchPipelineBuilder, BatchProgress
 │   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog, TypeFilterDialog, AttributeParserDialog, ChromFilterDialog
 │   ├── search/               # SearchBar (Ctrl+F floating search)
 │   └── stats/                # StatsPanel, ChromDistribution, SizeDistribution
@@ -146,7 +146,7 @@ src/
 - Special case: `chrM` ↔ `MT`
 - S. cerevisiae: Roman numerals `I`–`XVI` + `Mito`
 - A. thaliana: `1`–`5` + `Mt` (mitochondria) + `Pt` (plastid/chloroplast)
-- `CHROM_ORDER` supports numeric (1–22), Roman (I–XVI), and special chromosomes for sorting
+- `CHROM_ORDER` uses two-tier ordering: `STANDARD_ORDER` (X=23, Y=24, M=25 — after chr22) and `ROMAN_ORDER` (X=10 for S. cerevisiae). `chromRank(chrom, useRomanOrder?)` selects ordering by species
 
 ## Multi-Species Support
 
@@ -200,7 +200,7 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 19. **Intersect / Subtract**: Load second file (same format). Two-axis controls: Action (Intersect=keep matching / Subtract=remove matching) × Match Type (Overlap=any overlap / Exact=chrom+start+end). Format-aware via `format-helpers`: supports BED, VCF, and GFF3. Overlap uses binary search O(N log M) with half-open coordinate normalization. Exact uses Set-based O(1) key lookup.
 20. **Complement (BED)**: Generates gap regions. Requires chrom sizes (GRCh37/GRCh38 built-in or custom). REPLACES all rows with BED3 complement.
 21. **Ensembl Genome Browser**: Opens selected regions in Ensembl Browser. Single region: direct link. Multiple: bounding region + 10% padding. Uses `browserBase` + `browserSpecies` from species config. Coordinates converted to 1-based for Ensembl URL.
-22. **CHROM_ORDER**: Shared natural chromosome ordering in `utils/chromosome.ts`. Used by sort-rows.ts and ChromDistribution.
+22. **CHROM_ORDER**: Species-aware chromosome ordering in `utils/chromosome.ts`. Two maps: `STANDARD_ORDER` (X/Y/M after chr22) and `ROMAN_ORDER` (S. cerevisiae: X=10). `chromRank(chrom, useRomanOrder?)` used by sort-rows.ts, ChromDistribution, ChromFilterDialog.
 23. **INFO Column Filter**: Filter rows by parsed `INFO_*` column values. Auto-detects numeric vs categorical. Numeric: operator (>=, <=, ==, !=) + threshold. Categorical: unique value checklist. Missing (`.`) toggle. Only shown in context menu when INFO_* columns exist.
 24. **GFF3 format**: 9-column TSV (seqid, source, type, start, end, score, strand, phase, attributes). 1-based inclusive coordinates. `##` directives preserved for round-trip. Attributes are semicolon-separated key=value pairs (URL-encoded).
 25. **GFF3 Type Filter**: Scans `type` column for unique feature types with counts. Quick actions: Gene Only, Exon Only, CDS Only.
@@ -208,6 +208,6 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 27. **GFF3 Attribute Column Filter**: Reuses `InfoColumnFilterDialog` — `getInfoColumns()` returns both `INFO_*` and `ATTR_*` columns. Only shown when `ATTR_*` columns exist (after Parse Attributes).
 28. **Chromosome Filter**: Filter rows by chromosome. Shows unique chromosomes as checkboxes with row counts, sorted by `CHROM_ORDER` (natural order). Quick actions: Select All, Deselect All, Autosomes (chr1–22), chr1 Only. Format-aware via `getChromColumn()`. Uses `deleteRows` for undo support. Shared across BED/VCF/GFF3 — shown in Transform section.
 29. **Gzip (.gz) support**: `.vcf.gz`, `.gff3.gz`, `.bed.gz` files decompressed in-browser. Supports both standard gzip and BGZF (blocked gzip from bgzip/samtools). First tries native `DecompressionStream`; on failure falls back to block-by-block decompression parsing BGZF headers (BC subfield → BSIZE). Extension stripped for format detection. Loading toast shown during decompression. Size limits enforced on decompressed content.
-30. **Batch Mode**: Multi-file processing pipeline accessed via DropZone "Batch Mode" button. Wizard flow: upload files (same format enforced) → pick species/assembly → select operation with parameters → sequential processing → ZIP export via JSZip. Separate `useBatchStore` — no undo, no editor. All operations available: client-side (sort, dedup, merge, extend, validate, complement, filters, intersect, find-replace) and API-based (annotate, GC content, liftover, clean intergenic). Operations use pure (store-free) function variants. File parsing via shared `parseFileFromDisk()` utility. Results exported as individual files in a ZIP archive.
+30. **Batch Mode**: Multi-file processing pipeline accessed via DropZone "Batch Mode" button. Wizard flow: upload files (same format enforced) → pick species/assembly → build pipeline (chain multiple operations) → sequential processing → ZIP export via JSZip. Separate `useBatchStore` — no undo, no editor. **Pipeline support**: users chain multiple operations in sequence (e.g., Sort → Extend ±200bp → Dedup). Each step's output feeds the next. Pipeline builder UI with reorder/remove controls. Format-aware: tracks output format through pipeline (e.g., merge → BED3) to filter valid operations for next step. All operations available: client-side (sort, dedup, merge, extend, validate, complement, filters, intersect, find-replace) and API-based (annotate, GC content, liftover, clean intergenic). Operations use pure (store-free) function variants. File parsing via shared `parseFileFromDisk()` utility. Results exported as individual files in a ZIP archive with composite filename suffix.
 31. **Pure operation functions**: Each operation module exports a store-free pure function variant (e.g., `sortRows`, `removeDuplicateRows`, `mergeRegionRows`) alongside the existing store-coupled version. Used by batch mode. API operations have dedicated `batch-api-runners.ts` with `runPureBatch` helper.
 32. **parseFileFromDisk**: Shared file parsing utility in `parsers/parse-file.ts`. Handles gz decompression, format detection, parsing. Used by both DropZone (single file) and batch mode (multi-file). Also exports `parseContent()` for example file loading.
