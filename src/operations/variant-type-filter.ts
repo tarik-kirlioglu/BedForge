@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 export type VariantType = "SNP" | "INDEL" | "MNP" | "MIXED" | "OTHER";
 
@@ -71,5 +72,14 @@ export function runVariantTypeFilter(keepTypes: Set<VariantType>): void {
   const kept = before - toRemove.size;
   toast.success("Filtered by variant type", {
     description: `Kept ${kept} rows, removed ${toRemove.size}`,
+  });
+}
+
+/** Pure variant: filter rows by variant type */
+export function filterByVariantTypes(rows: GenomicRow[], keepTypes: Set<VariantType>): GenomicRow[] {
+  return rows.filter((row) => {
+    const ref = String(row.REF ?? ".");
+    const alt = String(row.ALT ?? ".");
+    return keepTypes.has(classifyVariant(ref, alt));
   });
 }

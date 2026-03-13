@@ -66,3 +66,9 @@ export function runSort(format: FileFormat): void {
     description: "Natural chromosome order (chr1...chr22, X, Y, M)",
   });
 }
+
+/** Pure variant: sort rows without touching the store */
+export function sortRows(rows: GenomicRow[], format: FileFormat): GenomicRow[] {
+  const sorted = [...rows].sort((a, b) => compareRows(a, b, format));
+  return sorted.map((row, i) => ({ ...row, _index: i }));
+}

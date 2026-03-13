@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 /**
  * Scan the "type" column for unique feature types with counts.
@@ -43,4 +44,9 @@ export function runTypeFilter(keepTypes: Set<string>): void {
   toast.success("Type filter applied", {
     description: `Kept ${kept} rows, removed ${removeIndices.size}`,
   });
+}
+
+/** Pure variant: filter rows by GFF3 feature type */
+export function filterByTypeValues(rows: GenomicRow[], keepTypes: Set<string>): GenomicRow[] {
+  return rows.filter((row) => keepTypes.has(String(row.type ?? ".")));
 }

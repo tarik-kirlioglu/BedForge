@@ -93,3 +93,54 @@ export function runComplement(chromSizes: Map<string, number>): void {
     description: "All existing rows replaced with gap regions (BED3)",
   });
 }
+
+/** Pure variant: compute complement regions */
+export function computeComplement(rows: GenomicRow[], chromSizes: Map<string, number>): GenomicRow[] {
+  const chromIntervals = new Map<string, Array<{ start: number; end: number }>>();
+  for (const row of rows) {
+    const chrom = String(row.chrom ?? "");
+    const start = Number(row.chromStart);
+    const end = Number(row.chromEnd);
+    if (!chrom || chrom === "." || isNaN(start) || isNaN(end)) continue;
+
+    if (!chromIntervals.has(chrom)) chromIntervals.set(chrom, []);
+    chromIntervals.get(chrom)!.push({ start, end });
+  }
+
+  for (const intervals of chromIntervals.values()) {
+    intervals.sort((a, b) => a.start - b.start);
+  }
+
+  const complementRows: GenomicRow[] = [];
+  let idx = 0;
+
+  for (const [chrom, size] of chromSizes.entries()) {
+    const intervals = chromIntervals.get(chrom) ?? [];
+    let pos = 0;
+    for (const iv of intervals) {
+      if (iv.start > pos) {
+        complementRows.push({
+          _index: idx,
+          _rowId: `complement-${idx}`,
+          chrom,
+          chromStart: pos,
+          chromEnd: Math.min(iv.start, size),
+        });
+        idx++;
+      }
+      pos = Math.max(pos, iv.end);
+    }
+    if (pos < size) {
+      complementRows.push({
+        _index: idx,
+        _rowId: `complement-${idx}`,
+        chrom,
+        chromStart: pos,
+        chromEnd: size,
+      });
+      idx++;
+    }
+  }
+
+  return complementRows;
+}

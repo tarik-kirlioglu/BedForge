@@ -71,3 +71,40 @@ export function runExtendRegions(
     description: `${targetRows.length} region${targetRows.length !== 1 ? "s" : ""} extended ${label}`,
   });
 }
+
+/** Pure variant: extend/slop regions */
+export function extendRegionRows(
+  rows: GenomicRow[],
+  upstream: number,
+  downstream: number,
+  format: FileFormat,
+): GenomicRow[] {
+  if (rows.length === 0 || (upstream === 0 && downstream === 0)) return rows;
+
+  if (isBedFamily(format)) {
+    return rows.map((row) => {
+      const start = Number(row.chromStart ?? 0);
+      const end = Number(row.chromEnd ?? 0);
+      const strand = String(row.strand ?? ".");
+
+      let newStart: number;
+      let newEnd: number;
+
+      if (strand === "-") {
+        newStart = Math.max(0, start - downstream);
+        newEnd = end + upstream;
+      } else {
+        newStart = Math.max(0, start - upstream);
+        newEnd = end + downstream;
+      }
+
+      return { ...row, chromStart: newStart, chromEnd: newEnd };
+    });
+  }
+
+  // VCF: adjust POS only
+  return rows.map((row) => {
+    const pos = Number(row.POS ?? 0);
+    return { ...row, POS: Math.max(1, pos - upstream) };
+  });
+}

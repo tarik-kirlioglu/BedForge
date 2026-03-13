@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 /** Extract GT value from a sample field (e.g., "0/1:30:99" → "0/1") */
 function extractGT(formatStr: string, sampleStr: string): string {
@@ -73,5 +74,15 @@ export function runGenotypeFilter(
   const kept = before - toRemove.size;
   toast.success("Filtered by genotype", {
     description: `Kept ${kept} rows, removed ${toRemove.size}`,
+  });
+}
+
+/** Pure variant: filter rows by genotype */
+export function filterByGenotypes(rows: GenomicRow[], sampleName: string, keepGTs: Set<string>): GenomicRow[] {
+  return rows.filter((row) => {
+    const format = String(row.FORMAT ?? "GT");
+    const sample = String(row[sampleName] ?? "./.");
+    const gt = extractGT(format, sample);
+    return keepGTs.has(gt);
   });
 }

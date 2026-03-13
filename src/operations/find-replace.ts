@@ -2,6 +2,7 @@ import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
 import { useSelectionStore } from "../stores/useSelectionStore";
+import type { GenomicRow } from "../types/genomic";
 
 const NUMERIC_COLUMNS = new Set([
   "chromStart", "chromEnd", "POS", "score",
@@ -137,4 +138,43 @@ export function runFindReplace(options: FindReplaceOptions): void {
 
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Pure variant: find and replace in rows */
+export function findAndReplace(
+  rows: GenomicRow[],
+  columns: string[],
+  options: { search: string; replace: string; caseSensitive: boolean },
+): GenomicRow[] {
+  const { search, replace, caseSensitive } = options;
+  if (!search) return rows;
+
+  return rows.map((row) => {
+    const newRow = { ...row };
+    let hasChange = false;
+
+    for (const col of columns) {
+      const val = String(row[col] ?? "");
+      const matches = caseSensitive
+        ? val.includes(search)
+        : val.toLowerCase().includes(search.toLowerCase());
+
+      if (matches) {
+        const newVal = caseSensitive
+          ? val.replaceAll(search, replace)
+          : val.replace(new RegExp(escapeRegex(search), "gi"), replace);
+
+        if (NUMERIC_COLUMNS.has(col)) {
+          const parsed = parseInt(newVal, 10);
+          if (isNaN(parsed)) continue;
+          newRow[col] = parsed;
+        } else {
+          newRow[col] = newVal;
+        }
+        hasChange = true;
+      }
+    }
+
+    return hasChange ? newRow : row;
+  });
 }

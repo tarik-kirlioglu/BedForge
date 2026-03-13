@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 export interface InfoFieldSummary {
   key: string;
@@ -137,4 +138,65 @@ export function runExtractInfoFields(keys: string[]): void {
   toast.success(`Extracted ${keys.length} INFO field${keys.length !== 1 ? "s" : ""}`, {
     description: keys.map((k) => `INFO_${k}`).join(", "),
   });
+}
+
+/** Pure variant: parse INFO fields and return new rows with INFO_* columns */
+export function parseInfoFields(
+  rows: GenomicRow[],
+  keys: string[],
+): { rows: GenomicRow[]; newColumns: string[] } {
+  if (keys.length === 0) return { rows, newColumns: [] };
+
+  // Determine which keys are flags by scanning
+  const flagKeys = new Set<string>();
+  for (const row of rows) {
+    const info = String(row.INFO ?? ".");
+    if (info === "." || info === "") continue;
+    for (const pair of info.split(";")) {
+      if (pair.indexOf("=") === -1) {
+        const key = pair.trim();
+        if (key) flagKeys.add(key);
+      }
+    }
+  }
+
+  const newColumns: string[] = [];
+  for (const key of keys) {
+    newColumns.push(`INFO_${key}`);
+  }
+
+  const newRows = rows.map((row) => {
+    const newRow = { ...row };
+    const info = String(row.INFO ?? ".");
+    const parsed = new Map<string, string>();
+
+    if (info !== "." && info !== "") {
+      for (const pair of info.split(";")) {
+        const eqIdx = pair.indexOf("=");
+        if (eqIdx === -1) {
+          const k = pair.trim();
+          if (k) parsed.set(k, "1");
+        } else {
+          const k = pair.slice(0, eqIdx).trim();
+          const v = pair.slice(eqIdx + 1).trim();
+          if (k) parsed.set(k, v);
+        }
+      }
+    }
+
+    for (const key of keys) {
+      const val = parsed.get(key);
+      if (val !== undefined) {
+        newRow[`INFO_${key}`] = val;
+      } else if (flagKeys.has(key)) {
+        newRow[`INFO_${key}`] = "0";
+      } else {
+        newRow[`INFO_${key}`] = ".";
+      }
+    }
+
+    return newRow;
+  });
+
+  return { rows: newRows, newColumns };
 }

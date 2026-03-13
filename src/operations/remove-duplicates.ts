@@ -2,7 +2,7 @@ import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
 import { getChromColumn, getStartColumn, getEndColumn } from "../utils/format-helpers";
-import type { FileFormat } from "../types/genomic";
+import type { FileFormat, GenomicRow } from "../types/genomic";
 
 /**
  * Remove duplicate rows based on chrom:start:end coordinates.
@@ -39,4 +39,22 @@ export function runRemoveDuplicates(format: FileFormat): void {
   toast.success("Duplicates removed", {
     description: `Removed ${duplicateIndices.size} duplicate row${duplicateIndices.size !== 1 ? "s" : ""}`,
   });
+}
+
+/** Pure variant: remove duplicate rows by chrom:start:end */
+export function removeDuplicateRows(rows: GenomicRow[], format: FileFormat): GenomicRow[] {
+  const seen = new Set<string>();
+  const chromCol = getChromColumn(format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
+  const result: GenomicRow[] = [];
+
+  for (const row of rows) {
+    const key = `${String(row[chromCol] ?? "")}:${String(row[startCol])}:${String(row[endCol])}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(row);
+    }
+  }
+  return result;
 }

@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 export interface AttributeFieldSummary {
   key: string;
@@ -105,4 +106,46 @@ export function runExtractAttributes(keys: string[]): void {
   toast.success("Attributes extracted", {
     description: `Added ${keys.length} column${keys.length !== 1 ? "s" : ""}: ${keys.map((k) => `ATTR_${k}`).join(", ")}`,
   });
+}
+
+/** Pure variant: parse GFF3 attributes into ATTR_* columns */
+export function parseAttributeFields(
+  rows: GenomicRow[],
+  keys: string[],
+): { rows: GenomicRow[]; newColumns: string[] } {
+  if (keys.length === 0) return { rows, newColumns: [] };
+
+  const keySet = new Set(keys);
+  const newColumns = keys.map((k) => `ATTR_${k}`);
+
+  const newRows = rows.map((row) => {
+    const newRow = { ...row };
+    const attrs = String(row.attributes ?? "");
+
+    // Initialize all columns with "."
+    for (const key of keys) {
+      newRow[`ATTR_${key}`] = ".";
+    }
+
+    if (attrs && attrs !== ".") {
+      for (const pair of attrs.split(";")) {
+        const eqIdx = pair.indexOf("=");
+        if (eqIdx === -1) continue;
+        const key = pair.slice(0, eqIdx).trim();
+        if (!keySet.has(key)) continue;
+        const value = pair.slice(eqIdx + 1).trim();
+        let decoded: string;
+        try {
+          decoded = decodeURIComponent(value);
+        } catch {
+          decoded = value;
+        }
+        newRow[`ATTR_${key}`] = decoded;
+      }
+    }
+
+    return newRow;
+  });
+
+  return { rows: newRows, newColumns };
 }

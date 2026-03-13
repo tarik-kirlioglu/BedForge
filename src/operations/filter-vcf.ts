@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 /**
  * Filter VCF rows by FILTER column values.
@@ -112,4 +113,19 @@ export function getQualStats(): { min: number; max: number; median: number } {
     : quals[mid]!;
 
   return { min, max, median: Math.round(median * 10) / 10 };
+}
+
+/** Pure variant: filter rows by FILTER column values */
+export function filterByFilterValues(rows: GenomicRow[], keepValues: Set<string>): GenomicRow[] {
+  return rows.filter((row) => keepValues.has(String(row.FILTER ?? ".")));
+}
+
+/** Pure variant: filter rows by minimum QUAL score */
+export function filterByQual(rows: GenomicRow[], minQual: number): GenomicRow[] {
+  return rows.filter((row) => {
+    const qualStr = String(row.QUAL ?? ".");
+    if (qualStr === ".") return true;
+    const qual = Number(qualStr);
+    return isNaN(qual) || qual >= minQual;
+  });
 }

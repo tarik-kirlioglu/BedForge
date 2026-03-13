@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useFileStore } from "../stores/useFileStore";
 import { getChromColumn } from "../utils/format-helpers";
 
-import type { FileFormat } from "../types/genomic";
+import type { FileFormat, GenomicRow } from "../types/genomic";
 
 /**
  * Scan the chromosome column for unique values with counts.
@@ -48,4 +48,10 @@ export function runChromFilter(keepChroms: Set<string>, format: FileFormat): voi
   toast.success("Chromosome filter applied", {
     description: `Kept ${kept} rows, removed ${removeIndices.size}`,
   });
+}
+
+/** Pure variant: filter rows by chromosome values */
+export function filterByChromValues(rows: GenomicRow[], keepChroms: Set<string>, format: FileFormat): GenomicRow[] {
+  const chromCol = getChromColumn(format);
+  return rows.filter((row) => keepChroms.has(String(row[chromCol] ?? ".")));
 }

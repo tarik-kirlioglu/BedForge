@@ -103,3 +103,66 @@ export function runMergeRegions(): void {
     description: `${rows.length} regions → ${merged.length} (${removedCount} merged)`,
   });
 }
+
+/** Pure variant: merge overlapping BED regions */
+export function mergeRegionRows(rows: GenomicRow[]): GenomicRow[] {
+  if (rows.length === 0) return [];
+
+  const groups = new Map<string, GenomicRow[]>();
+  for (const row of rows) {
+    const chrom = String(row.chrom ?? "");
+    if (!groups.has(chrom)) groups.set(chrom, []);
+    groups.get(chrom)!.push(row);
+  }
+
+  const merged: GenomicRow[] = [];
+  let idx = 0;
+
+  const sortedChroms = [...groups.keys()].sort((a, b) => {
+    const numA = parseInt(a.replace(/^chr/i, ""), 10);
+    const numB = parseInt(b.replace(/^chr/i, ""), 10);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    if (!isNaN(numA)) return -1;
+    if (!isNaN(numB)) return 1;
+    return a.localeCompare(b);
+  });
+
+  for (const chrom of sortedChroms) {
+    const group = groups.get(chrom)!;
+    group.sort((a, b) => Number(a.chromStart) - Number(b.chromStart));
+
+    let currentStart = Number(group[0]!.chromStart);
+    let currentEnd = Number(group[0]!.chromEnd);
+
+    for (let i = 1; i < group.length; i++) {
+      const rowStart = Number(group[i]!.chromStart);
+      const rowEnd = Number(group[i]!.chromEnd);
+
+      if (rowStart <= currentEnd) {
+        currentEnd = Math.max(currentEnd, rowEnd);
+      } else {
+        merged.push({
+          _index: idx,
+          _rowId: `${chrom}:${currentStart}-${currentEnd}:${idx}`,
+          chrom,
+          chromStart: currentStart,
+          chromEnd: currentEnd,
+        });
+        idx++;
+        currentStart = rowStart;
+        currentEnd = rowEnd;
+      }
+    }
+
+    merged.push({
+      _index: idx,
+      _rowId: `${chrom}:${currentStart}-${currentEnd}:${idx}`,
+      chrom,
+      chromStart: currentStart,
+      chromEnd: currentEnd,
+    });
+    idx++;
+  }
+
+  return merged;
+}

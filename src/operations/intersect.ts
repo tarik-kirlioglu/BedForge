@@ -189,3 +189,37 @@ export function runIntersect(
     description: `Kept ${kept} rows, removed ${toRemove.size}`,
   });
 }
+
+/** Pure variant: intersect/subtract rows without store access */
+export function intersectRows(
+  rows: GenomicRow[],
+  format: FileFormat,
+  targets: GenomicRow[],
+  targetFormat: FileFormat,
+  action: IntersectAction,
+  matchType: MatchType,
+): GenomicRow[] {
+  const chromCol = getChromColumn(format);
+  const startCol = getStartColumn(format);
+  const endCol = getEndColumn(format);
+
+  if (matchType === "exact") {
+    const exactKeys = buildExactIndex(targets, targetFormat);
+    return rows.filter((row) => {
+      const key = `${String(row[chromCol] ?? "")}:${Number(row[startCol])}:${Number(row[endCol])}`;
+      const matches = exactKeys.has(key);
+      return action === "keep" ? matches : !matches;
+    });
+  }
+
+  const index = buildIndex(targets, targetFormat);
+  return rows.filter((row) => {
+    const chrom = String(row[chromCol] ?? "");
+    const rawStart = Number(row[startCol]);
+    const rawEnd = Number(row[endCol]);
+    const iv = toHalfOpen(rawStart, rawEnd, format);
+    const chromIntervals = index.get(chrom);
+    const matches = chromIntervals ? hasOverlap(chromIntervals, iv.start, iv.end) : false;
+    return action === "keep" ? matches : !matches;
+  });
+}

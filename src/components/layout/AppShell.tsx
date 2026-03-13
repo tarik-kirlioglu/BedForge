@@ -1,8 +1,10 @@
 import { useState } from "react";
 
 import { useFileStore } from "../../stores/useFileStore";
+import { useBatchStore } from "../../stores/useBatchStore";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { DropZone } from "../drop-zone/DropZone";
+import { BatchShell } from "../batch/BatchShell";
 import { Toolbar } from "./Toolbar";
 import { DataGrid } from "../table/DataGrid";
 import { GenomicContextMenu } from "../context-menu/GenomicContextMenu";
@@ -13,10 +15,15 @@ import { StatsPanel } from "../stats/StatsPanel";
 export function AppShell(): React.ReactElement {
   const rows = useFileStore((s) => s.rows);
   const hasFile = rows.length > 0;
+  const isBatchActive = useBatchStore((s) => s.isActive);
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
   useKeyboardShortcuts({ onOpenFindReplace: () => setShowFindReplace(true) });
+
+  if (isBatchActive) {
+    return <BatchShell />;
+  }
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-void">

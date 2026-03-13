@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { useFileStore } from "../stores/useFileStore";
+import type { GenomicRow } from "../types/genomic";
 
 export type IssueType = "swapped" | "negative" | "zero-length" | "invalid-chrom" | "duplicate";
 
@@ -168,4 +169,36 @@ export function applyFixes(fixTypes: Set<IssueType>): void {
       .filter(Boolean)
       .join(", "),
   });
+}
+
+/** Pure variant: validate and auto-fix BED coordinates */
+export function validateAndFixRows(rows: GenomicRow[]): GenomicRow[] {
+  const seen = new Set<string>();
+  const result: GenomicRow[] = [];
+
+  for (const row of rows) {
+    const chrom = String(row.chrom ?? "");
+    let start = Number(row.chromStart);
+    let end = Number(row.chromEnd);
+
+    // Fix negative
+    if (start < 0) start = 0;
+    if (end < 0) end = 0;
+
+    // Fix swapped
+    if (start > end) {
+      const tmp = start;
+      start = end;
+      end = tmp;
+    }
+
+    // Skip duplicates
+    const key = `${chrom}:${start}:${end}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    result.push({ ...row, chromStart: start, chromEnd: end });
+  }
+
+  return result;
 }
