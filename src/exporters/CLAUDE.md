@@ -10,6 +10,7 @@ Converts in-memory row data back to BED/VCF/GFF3 text format and triggers browse
 | `vcf-exporter.ts` | `exportVcf(rows, meta, headerColumns, sampleNames)` → complete VCF with preserved `##` headers |
 | `gff3-exporter.ts` | `exportGff3(rows, directives)` → complete GFF3 with preserved `##` directives |
 | `download.ts` | `downloadFile(content, fileName)` → triggers browser download via Blob + programmatic `<a>` click |
+| `batch-export.ts` | `exportFileContent(parsed, rows, columns)` → routes to correct exporter by format. `getBatchExportFileName(originalName, suffix)` → output filename. `downloadBatchZip(results, zipName)` → creates ZIP via JSZip and triggers download |
 
 ## Rules
 

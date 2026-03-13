@@ -28,6 +28,7 @@ Genomic operation orchestrators. Two categories: API-based (Ensembl) and client-
 | `intersect.ts` | Intersect/Subtract/Exact Match with another file (BED/VCF/GFF3). Format-aware, coordinate-normalized | Client |
 | `complement.ts` | Compute complement (gap) regions given chromosome sizes | Client |
 | `ensembl-link.ts` | Open selected regions in Ensembl Genome Browser | Client |
+| `batch-api-runners.ts` | Store-free async API runners for batch mode: `batchAnnotateGenes`, `batchGCContent`, `batchLiftOver`, `batchCleanIntergenic`. Uses internal `runPureBatch` helper with `onProgress`/`isCancelled` callbacks | API (Batch) |
 
 
 ## API Operation Pattern
@@ -74,6 +75,30 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - `useOperationStore.isCancelled` flag checked between batches.
 - Partial results are still applied to the store.
 
+## Pure Operation Variants (Batch Mode)
+
+Each operation module exports a **store-free pure function** alongside the existing store-coupled version. These pure variants accept data in and return data out, with no Zustand store dependency. Used by `useBatchStore.applyOperation()` dispatcher.
+
+| Module | Pure Export |
+|--------|------------|
+| `sort-rows.ts` | `sortRows(rows, format) → GenomicRow[]` |
+| `remove-duplicates.ts` | `removeDuplicateRows(rows, format) → GenomicRow[]` |
+| `merge-regions.ts` | `mergeRegionRows(rows) → GenomicRow[]` |
+| `extend-regions.ts` | `extendRegionRows(rows, upstream, downstream, format) → GenomicRow[]` |
+| `validate-coordinates.ts` | `validateAndFixRows(rows) → GenomicRow[]` |
+| `complement.ts` | `computeComplement(rows, chromSizes) → GenomicRow[]` |
+| `chrom-filter.ts` | `filterByChromValues(rows, keepChroms, format) → GenomicRow[]` |
+| `filter-vcf.ts` | `filterByQual(rows, minQual)`, `filterByFilterValues(rows, keepValues)` |
+| `variant-type-filter.ts` | `filterByVariantTypes(rows, keepTypes) → GenomicRow[]` |
+| `genotype-filter.ts` | `filterByGenotypes(rows, sampleName, keepGTs) → GenomicRow[]` |
+| `type-filter.ts` | `filterByTypeValues(rows, keepTypes) → GenomicRow[]` |
+| `info-parser.ts` | `parseInfoFields(rows, keys) → { rows, newColumns }` |
+| `gff3-attribute-parser.ts` | `parseAttributeFields(rows, keys) → { rows, newColumns }` |
+| `intersect.ts` | `intersectRows(rows, format, targets, targetFormat, action, matchType) → GenomicRow[]` |
+| `find-replace.ts` | `findAndReplace(rows, columns, options) → GenomicRow[]` |
+
+API operations use `batch-api-runners.ts` with a `runPureBatch` helper that replaces the store-dependent `runBatchOperation`.
+
 ## Rules
 
 - API operations must use functions from `api/` — never call `fetch()` directly.
@@ -82,3 +107,4 @@ Sort, Remove Duplicates, Merge, Extend/Slop, VCF filters, and new features run e
 - Each operation is a standalone exported function, not a class.
 - All operations use `format: FileFormat` parameter (not `isBed: boolean`) with helpers from `utils/format-helpers.ts`.
 - API operations accept `speciesName` parameter (default: `"human"`) for multi-species Ensembl queries.
+- Pure variants must remain store-free — no Zustand imports, no side effects.

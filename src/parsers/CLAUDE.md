@@ -10,6 +10,7 @@ BED, VCF, and GFF3 file parsers. Converts raw text into typed GenomicRow arrays.
 | `vcf-parser.ts` | `parseVcf(text)` → `{ vcfFile, rows, columns }`. Preserves meta lines verbatim |
 | `gff3-parser.ts` | `parseGff3(text)` → `{ directives, rows, columns }`. Preserves `##` directives verbatim |
 | `detect-format.ts` | `detectFormat(fileName, content)` → `FileFormat \| null`. Extension-based + content sniffing. Strips `.gz` extension before detection. GFF3 detected before BED fallback |
+| `parse-file.ts` | `parseFileFromDisk(file: File)` → `Promise<ParsedFile>`. Shared utility: gz decompression, format detection, parsing. Used by DropZone and batch mode. Also exports `parseContent(content, fileName)` for example loading and `exceedsSoftLimit(content)` |
 
 ## Critical Rules
 

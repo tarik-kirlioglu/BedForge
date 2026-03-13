@@ -6,8 +6,9 @@ React components organized by feature area. All styled with the "Genomic Instrum
 
 | Directory | Components | Purpose |
 |-----------|-----------|---------|
-| `layout/` | `AppShell.tsx`, `Toolbar.tsx` | Top-level layout with glass-strong toolbar, brand mark, operation progress, export dropdown |
-| `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal |
+| `layout/` | `AppShell.tsx`, `Toolbar.tsx` | Top-level layout with triple routing (batch/editor/dropzone), glass-strong toolbar, brand mark, operation progress, export dropdown |
+| `batch/` | `BatchShell.tsx`, `BatchDropZone.tsx`, `BatchOperationPicker.tsx`, `BatchProgress.tsx` | Batch mode wizard: multi-file upload → operation picker → progress → ZIP export |
+| `drop-zone/` | `DropZone.tsx` | Hero landing page with animated grid, radial glow, feature cards, assembly picker modal, Batch Mode button |
 | `table/` | `DataGrid.tsx`, `EditableCell.tsx` | Virtualized spreadsheet with glass surfaces, chromosome color-coding, status bar |
 | `context-menu/` | `GenomicContextMenu.tsx` | Frosted glass right-click menu with SVG icons, section labels, slide-in animation |
 | `operations/` | `SlopDialog.tsx`, `FilterColumnDialog.tsx`, `QualFilterDialog.tsx`, `VariantTypeDialog.tsx`, `GenotypeFilterDialog.tsx`, `InfoParserDialog.tsx`, `InfoColumnFilterDialog.tsx`, `FindReplaceDialog.tsx`, `ValidationDialog.tsx`, `IntersectDialog.tsx`, `ComplementDialog.tsx`, `TypeFilterDialog.tsx`, `AttributeParserDialog.tsx`, `ChromFilterDialog.tsx` | Operation parameter dialogs |
@@ -36,7 +37,9 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Accepts: `.bed`, `.bed3`–`.bed12`, `.vcf`, `.gff3`, `.gff`, `.txt`, `.tsv`, `.gz` (gzip-compressed variants)
 - Gzip support: `.vcf.gz`, `.gff3.gz`, `.bed.gz` decompressed via native `DecompressionStream` with BGZF fallback (block-by-block decompression for bgzip files). Loading toast shown
 - File size limits: soft warning at 50MB, hard block at 500MB (decompressed size). Streaming decompression aborts early if hard limit exceeded
+- "Batch Mode" button: enters batch wizard via `useBatchStore.enterBatchMode()`
 - Footer: "Built for bioinformaticians. No backend." + GitHub link icon
+- File parsing delegated to `parseFileFromDisk()` / `parseContent()` from `parsers/parse-file.ts`
 
 ### Toolbar
 - `.glass-strong` surface with brand mark on left
@@ -117,6 +120,33 @@ React components organized by feature area. All styled with the "Genomic Instrum
 - Quick action: "Common Keys" (ID, Name, Parent, biotype, Dbxref)
 - Extracted columns get `ATTR_` prefix
 - CTA: amber-colored "Extract" button
+
+### Batch Components
+
+#### BatchShell
+- Multi-step wizard container, renders step component based on `useBatchStore.step`
+- Steps: `files` → `operation` → `processing` → `done`
+- Full-screen layout with `.bg-grid` background
+
+#### BatchDropZone (files step)
+- Multi-file drag & drop with format validation (all same base format)
+- File list with row counts and remove buttons
+- Species/assembly picker (reused from DropZone pattern)
+- `multiple` attribute on file input for multi-select
+- "Next" button when files loaded and species selected
+
+#### BatchOperationPicker (operation step)
+- Format-aware operation grid (filters by bed/vcf/gff3)
+- Operation cards with description and "API" badge for Ensembl operations
+- `OperationParams` sub-component for parameter configuration (Extend upstream/downstream, Filter QUAL threshold, LiftOver target assembly, Find & Replace search/replace, Intersect file upload, Complement chrom sizes, etc.)
+- "Start Processing" CTA button
+
+#### BatchProgress (processing/done steps)
+- File list with `StatusIcon` per file (spinner/checkmark/X/dash)
+- Overall progress bar
+- Row count changes displayed (original → result count)
+- Cancel button during processing
+- "Download ZIP" button when done, "Done" button to exit batch mode
 
 ### SlopDialog
 - Glass morphism modal with black/70 backdrop

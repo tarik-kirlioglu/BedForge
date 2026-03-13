@@ -10,12 +10,13 @@ TypeScript type definitions shared across the entire application.
 | `vcf.ts` | VCF types: `VcfMetaLine`, `VcfRow`, `VcfFile`, `VCF_FIXED_COLUMNS` constant |
 | `gff3.ts` | GFF3 types: `GFF3_COLUMNS` constant, `Gff3Directive` interface |
 | `genomic.ts` | Shared types: `GenomicRow` (universal table row), `Assembly` (string), `FileFormat` (includes `"gff3"`), `GenomicRegion`, `SpeciesConfig`, `SPECIES_LIST` (8 model organisms) |
+| `batch.ts` | Batch mode types: `BatchFileEntry`, `BatchFileStatus`, `BatchOperationId`, `BatchOperationConfig`, `BatchProgress`, `ParsedFile` |
 | `table.ts` | Table UI types: `CellPosition`, `SortDirection` |
 
 ## Rules
 
 - All types are interfaces or type aliases — no classes.
-- No runtime code except `BED_COLUMNS`, `VCF_FIXED_COLUMNS`, `GFF3_COLUMNS` constants, and `SPECIES_LIST` array.
+- No runtime code except `BED_COLUMNS`, `VCF_FIXED_COLUMNS`, `GFF3_COLUMNS` constants, `SPECIES_LIST` array, and batch type definitions.
 - `GenomicRow` is the universal row type: `Record<string, string | number>` with `_index` and `_rowId` metadata.
 - BED types use 0-based half-open coordinates. VCF types use 1-based. GFF3 uses 1-based inclusive. Documented in JSDoc.
 - Named exports from individual files. No barrel `index.ts`.

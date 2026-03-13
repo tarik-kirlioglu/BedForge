@@ -10,10 +10,11 @@ Zustand stores for application state management.
 | `useSelectionStore.ts` | Row/cell selection: `selectedRowIndices` (Set), `activeCell`, toggle/range/selectAll/clear |
 | `useOperationStore.ts` | Running operation state: isRunning, operationName, progress {completed, total}, isCancelled |
 | `useSearchStore.ts` | Search/Find state: isOpen, query, matchIndices, currentMatchIndex. Actions: open, close, setQuery, setMatches, nextMatch, prevMatch |
+| `useBatchStore.ts` | Batch mode state: isActive, step (files/operation/processing/done), files[], fileFormat, species, assembly, operation, isRunning, progress, results[]. Actions: enterBatchMode, exitBatchMode, addFiles, removeFile, setOperation, startProcessing, cancelProcessing, exportZip. Contains `applyOperation()` dispatcher for all pure operation variants |
 
 ## Rules
 
-- All stores use Zustand's `create`. `useFileStore` uses Immer middleware for ergonomic immutable updates.
+- All stores use Zustand's `create`. `useFileStore` uses Immer middleware for ergonomic immutable updates. `useBatchStore` uses plain Zustand (no Immer).
 - Store names always start with `use` prefix.
 - No cross-store imports — stores must not read from each other. Components compose multiple stores.
 - `useFileStore` actions push to undo history before mutations. History capped at 20 snapshots.
@@ -32,4 +33,8 @@ Cell Edit → useFileStore.updateCell() → push history → mutate row
 API Operation → useOperationStore.startOperation() → runner → useFileStore.updateRows()
 Client Operation → useFileStore.setState() directly (sort, merge, etc.)
 Selection → useSelectionStore.toggleRow() / selectRange() / setSelectedRows()
+
+Batch Mode → useBatchStore.enterBatchMode() → addFiles → setOperation → startProcessing
+  → parseFileFromDisk per file → applyOperation (pure) → exportFileContent → results[]
+  → exportZip → downloadBatchZip (JSZip)
 ```

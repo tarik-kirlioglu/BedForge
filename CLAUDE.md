@@ -14,6 +14,7 @@ Visual genomic editor for BED, VCF, and GFF3 files. No backend — all bioinform
 | State | Zustand + Immer | 5.x / 10.x |
 | Styling | Tailwind CSS | 4.x (@tailwindcss/vite plugin) |
 | Toasts | Sonner | 2.x |
+| ZIP Export | JSZip | 3.x |
 | Testing | Vitest | 3.x |
 
 ## Commands
@@ -35,9 +36,9 @@ src/
 ├── App.tsx                   # Root component + Sonner toaster
 ├── index.css                 # Tailwind + design system tokens + animations
 ├── types/                    # TypeScript type definitions
-├── stores/                   # Zustand stores (file, selection, operation)
+├── stores/                   # Zustand stores (file, selection, operation, batch)
 ├── parsers/                  # BED/VCF/GFF3 file parsers
-├── exporters/                # BED/VCF/GFF3 file exporters
+├── exporters/                # BED/VCF/GFF3 file exporters + batch ZIP export
 ├── api/                      # Ensembl REST API client + rate limiter
 ├── operations/               # Genomic + BED operation orchestrators
 ├── components/
@@ -45,6 +46,7 @@ src/
 │   ├── drop-zone/            # Hero landing + drag & drop + Try Example buttons (Human/GRCh38 only, skips species picker)
 │   ├── table/                # DataGrid, EditableCell
 │   ├── context-menu/         # Right-click genomic menu + SVG icons
+│   ├── batch/                # BatchShell, BatchDropZone, BatchOperationPicker, BatchProgress
 │   ├── operations/           # SlopDialog, FilterColumnDialog, QualFilterDialog, VariantTypeDialog, GenotypeFilterDialog, InfoParserDialog, InfoColumnFilterDialog, FindReplaceDialog, ValidationDialog, IntersectDialog, ComplementDialog, TypeFilterDialog, AttributeParserDialog, ChromFilterDialog
 │   ├── search/               # SearchBar (Ctrl+F floating search)
 │   └── stats/                # StatsPanel, ChromDistribution, SizeDistribution
@@ -206,3 +208,6 @@ BedForge supports 7 model organisms via configurable `SpeciesConfig` in `types/g
 27. **GFF3 Attribute Column Filter**: Reuses `InfoColumnFilterDialog` — `getInfoColumns()` returns both `INFO_*` and `ATTR_*` columns. Only shown when `ATTR_*` columns exist (after Parse Attributes).
 28. **Chromosome Filter**: Filter rows by chromosome. Shows unique chromosomes as checkboxes with row counts, sorted by `CHROM_ORDER` (natural order). Quick actions: Select All, Deselect All, Autosomes (chr1–22), chr1 Only. Format-aware via `getChromColumn()`. Uses `deleteRows` for undo support. Shared across BED/VCF/GFF3 — shown in Transform section.
 29. **Gzip (.gz) support**: `.vcf.gz`, `.gff3.gz`, `.bed.gz` files decompressed in-browser. Supports both standard gzip and BGZF (blocked gzip from bgzip/samtools). First tries native `DecompressionStream`; on failure falls back to block-by-block decompression parsing BGZF headers (BC subfield → BSIZE). Extension stripped for format detection. Loading toast shown during decompression. Size limits enforced on decompressed content.
+30. **Batch Mode**: Multi-file processing pipeline accessed via DropZone "Batch Mode" button. Wizard flow: upload files (same format enforced) → pick species/assembly → select operation with parameters → sequential processing → ZIP export via JSZip. Separate `useBatchStore` — no undo, no editor. All operations available: client-side (sort, dedup, merge, extend, validate, complement, filters, intersect, find-replace) and API-based (annotate, GC content, liftover, clean intergenic). Operations use pure (store-free) function variants. File parsing via shared `parseFileFromDisk()` utility. Results exported as individual files in a ZIP archive.
+31. **Pure operation functions**: Each operation module exports a store-free pure function variant (e.g., `sortRows`, `removeDuplicateRows`, `mergeRegionRows`) alongside the existing store-coupled version. Used by batch mode. API operations have dedicated `batch-api-runners.ts` with `runPureBatch` helper.
+32. **parseFileFromDisk**: Shared file parsing utility in `parsers/parse-file.ts`. Handles gz decompression, format detection, parsing. Used by both DropZone (single file) and batch mode (multi-file). Also exports `parseContent()` for example file loading.
