@@ -48,6 +48,13 @@ export interface BatchOperationConfig {
   params: Record<string, unknown>;
 }
 
+/** A single step in the batch pipeline */
+export interface BatchPipelineStep {
+  id: string;
+  operationId: BatchOperationId;
+  params: Record<string, unknown>;
+}
+
 /** Two-level progress for batch queue */
 export interface BatchProgress {
   currentFileIndex: number;
@@ -55,6 +62,12 @@ export interface BatchProgress {
   currentFileName: string;
   /** Per-file progress for API operations (row-level) */
   fileProgress: { completed: number; total: number };
+  /** Current pipeline step index (0-based) */
+  currentStepIndex: number;
+  /** Total pipeline steps */
+  totalSteps: number;
+  /** Human-readable name of the current step */
+  currentStepName: string;
 }
 
 /** Result of parsing a file from disk */

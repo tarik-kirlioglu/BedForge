@@ -5,7 +5,7 @@ import { chromRank } from "../utils/chromosome";
 import { getChromColumn, getStartColumn, getEndColumn } from "../utils/format-helpers";
 import type { FileFormat, GenomicRow } from "../types/genomic";
 
-function compareRows(a: GenomicRow, b: GenomicRow, format: FileFormat): number {
+function compareRows(a: GenomicRow, b: GenomicRow, format: FileFormat, useRomanOrder?: boolean): number {
   const chromCol = getChromColumn(format);
   const startCol = getStartColumn(format);
   const endCol = getEndColumn(format);
@@ -13,7 +13,7 @@ function compareRows(a: GenomicRow, b: GenomicRow, format: FileFormat): number {
   const chromA = String(a[chromCol] ?? "");
   const chromB = String(b[chromCol] ?? "");
 
-  const rankDiff = chromRank(chromA) - chromRank(chromB);
+  const rankDiff = chromRank(chromA, useRomanOrder) - chromRank(chromB, useRomanOrder);
   if (rankDiff !== 0) return rankDiff;
 
   // Same chromosome rank — fallback to lexicographic for unknown chroms
@@ -35,9 +35,10 @@ function compareRows(a: GenomicRow, b: GenomicRow, format: FileFormat): number {
 }
 
 /** Sort rows by natural chromosome order, then by start, then by end */
-export function runSort(format: FileFormat): void {
+export function runSort(format: FileFormat, speciesId?: string): void {
   const store = useFileStore.getState();
-  const sorted = [...store.rows].sort((a, b) => compareRows(a, b, format));
+  const useRoman = speciesId === "s_cerevisiae";
+  const sorted = [...store.rows].sort((a, b) => compareRows(a, b, format, useRoman));
 
   // Re-index after sort
   const reindexed = sorted.map((row, i) => ({
@@ -68,7 +69,8 @@ export function runSort(format: FileFormat): void {
 }
 
 /** Pure variant: sort rows without touching the store */
-export function sortRows(rows: GenomicRow[], format: FileFormat): GenomicRow[] {
-  const sorted = [...rows].sort((a, b) => compareRows(a, b, format));
+export function sortRows(rows: GenomicRow[], format: FileFormat, speciesId?: string): GenomicRow[] {
+  const useRoman = speciesId === "s_cerevisiae";
+  const sorted = [...rows].sort((a, b) => compareRows(a, b, format, useRoman));
   return sorted.map((row, i) => ({ ...row, _index: i }));
 }

@@ -1,6 +1,6 @@
 import { useBatchStore } from "../../stores/useBatchStore";
 import { BatchDropZone } from "./BatchDropZone";
-import { BatchOperationPicker } from "./BatchOperationPicker";
+import { BatchPipelineBuilder } from "./BatchPipelineBuilder";
 import { BatchProgress } from "./BatchProgress";
 
 export function BatchShell(): React.ReactElement {
@@ -13,7 +13,7 @@ export function BatchShell(): React.ReactElement {
       <div className="noise absolute inset-0" />
 
       {step === "files" && <BatchDropZone />}
-      {step === "operation" && <BatchOperationPicker />}
+      {step === "operation" && <BatchPipelineBuilder />}
       {(step === "processing" || step === "done") && <BatchProgress />}
     </div>
   );

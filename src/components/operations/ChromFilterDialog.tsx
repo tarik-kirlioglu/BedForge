@@ -12,15 +12,18 @@ interface ChromFilterDialogProps {
 export function ChromFilterDialog(props: ChromFilterDialogProps): React.ReactElement | null {
   const { visible, onClose } = props;
   const fileFormat = useFileStore((s) => s.fileFormat);
+  const speciesId = useFileStore((s) => s.species?.id);
   const [chromValues, setChromValues] = useState<Array<{ value: string; count: number }>>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const useRoman = speciesId === "s_cerevisiae";
 
   useEffect(() => {
     if (visible && fileFormat) {
       const counts = scanChromosomes(fileFormat);
       const values = Array.from(counts.entries())
         .map(([value, count]) => ({ value, count }))
-        .sort((a, b) => chromRank(a.value) - chromRank(b.value));
+        .sort((a, b) => chromRank(a.value, useRoman) - chromRank(b.value, useRoman));
       setChromValues(values);
       setSelected(new Set(values.map((v) => v.value)));
     }

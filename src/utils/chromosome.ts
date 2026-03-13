@@ -1,41 +1,59 @@
 /**
  * Natural chromosome ordering:
- * Numeric: chr1–chr22, X, Y, M/MT
- * Roman numerals (S. cerevisiae): I–XVI, Mito
+ * Standard: chr1–chr22, X, Y, M/MT (sex + mito at end)
+ * Roman numerals (S. cerevisiae): I–XVI, Mito (X = Roman 10)
  * A. thaliana: 1–5, Mt, Pt
  */
-export const CHROM_ORDER: Record<string, number> = {};
 
-// Standard numeric chromosomes (human, mouse, rat, etc.)
+/** Standard ordering: numeric chroms 1–22, then X=23, Y=24, M=25 */
+const STANDARD_ORDER: Record<string, number> = {};
 for (let i = 1; i <= 22; i++) {
-  CHROM_ORDER[String(i)] = i;
-  CHROM_ORDER[`chr${i}`] = i;
+  STANDARD_ORDER[String(i)] = i;
+  STANDARD_ORDER[`chr${i}`] = i;
 }
-CHROM_ORDER["X"] = 23;
-CHROM_ORDER["chrX"] = 23;
-CHROM_ORDER["Y"] = 24;
-CHROM_ORDER["chrY"] = 24;
-CHROM_ORDER["M"] = 25;
-CHROM_ORDER["chrM"] = 25;
-CHROM_ORDER["MT"] = 25;
-CHROM_ORDER["chrMT"] = 25;
-
-// S. cerevisiae: Roman numeral chromosomes I–XVI + Mito
-const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI"];
-for (let i = 0; i < ROMAN.length; i++) {
-  CHROM_ORDER[ROMAN[i]!] = i + 1;
-  CHROM_ORDER[`chr${ROMAN[i]!}`] = i + 1;
-}
-CHROM_ORDER["Mito"] = 17;
-CHROM_ORDER["chrMito"] = 17;
+STANDARD_ORDER["X"] = 23;
+STANDARD_ORDER["chrX"] = 23;
+STANDARD_ORDER["Y"] = 24;
+STANDARD_ORDER["chrY"] = 24;
+STANDARD_ORDER["M"] = 25;
+STANDARD_ORDER["chrM"] = 25;
+STANDARD_ORDER["MT"] = 25;
+STANDARD_ORDER["chrMT"] = 25;
 
 // A. thaliana: Mt (mitochondria), Pt (plastid/chloroplast)
-CHROM_ORDER["Mt"] = 26;
-CHROM_ORDER["Pt"] = 27;
+STANDARD_ORDER["Mt"] = 26;
+STANDARD_ORDER["Pt"] = 27;
 
-/** Get natural chromosome rank (1-25, 99 for unknown) */
-export function chromRank(chrom: string): number {
-  return CHROM_ORDER[chrom] ?? 99;
+/** Roman numeral ordering for S. cerevisiae: I–XVI (X = 10), Mito = 17 */
+const ROMAN_ORDER: Record<string, number> = {};
+const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI"];
+for (let i = 0; i < ROMAN.length; i++) {
+  ROMAN_ORDER[ROMAN[i]!] = i + 1;
+  ROMAN_ORDER[`chr${ROMAN[i]!}`] = i + 1;
+}
+ROMAN_ORDER["Mito"] = 17;
+ROMAN_ORDER["chrMito"] = 17;
+
+/**
+ * Combined map for backward compat — standard takes priority over Roman for ambiguous keys (X).
+ * Use chromRank() with useRomanOrder flag instead for correct species-aware ordering.
+ */
+export const CHROM_ORDER: Record<string, number> = {
+  ...ROMAN_ORDER,
+  ...STANDARD_ORDER,
+};
+
+/**
+ * Get natural chromosome rank.
+ * @param chrom - Chromosome name (e.g. "chr1", "X", "III")
+ * @param useRomanOrder - If true, uses Roman numeral ordering (S. cerevisiae: X = 10)
+ * @returns Rank number (1-27, 99 for unknown)
+ */
+export function chromRank(chrom: string, useRomanOrder?: boolean): number {
+  if (useRomanOrder) {
+    return ROMAN_ORDER[chrom] ?? STANDARD_ORDER[chrom] ?? 99;
+  }
+  return STANDARD_ORDER[chrom] ?? ROMAN_ORDER[chrom] ?? 99;
 }
 
 /** Strip chr prefix and normalize for Ensembl API (chrM → MT) */

@@ -61,6 +61,16 @@ export function BatchProgress(): React.ReactElement {
           {progress && !isDone && (
             <p className="mt-1 text-sm text-text-secondary">
               File {progress.currentFileIndex + 1} of {progress.totalFiles}
+              {progress.totalSteps > 1 && (
+                <span className="ml-2 text-text-muted">
+                  — Step {progress.currentStepIndex + 1}/{progress.totalSteps}: {progress.currentStepName}
+                </span>
+              )}
+              {progress.totalSteps === 1 && progress.currentStepName && (
+                <span className="ml-2 text-text-muted">
+                  — {progress.currentStepName}
+                </span>
+              )}
               {progress.fileProgress.total > 0 && (
                 <span className="ml-2 font-mono text-text-muted">
                   ({progress.fileProgress.completed}/{progress.fileProgress.total} rows)

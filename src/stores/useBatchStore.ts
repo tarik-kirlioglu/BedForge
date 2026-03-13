@@ -28,8 +28,8 @@ import type { Assembly, FileFormat, GenomicRow, SpeciesConfig } from "../types/g
 import type {
   BatchFileEntry,
   BatchFileStatus,
-  BatchOperationConfig,
   BatchOperationId,
+  BatchPipelineStep,
   BatchProgress,
   ParsedFile,
 } from "../types/batch";
@@ -58,6 +58,30 @@ const OPERATION_SUFFIXES: Record<BatchOperationId, string> = {
   "clean-intergenic": "_genic",
 };
 
+/** Map from operation ID to a human-readable label */
+const OPERATION_LABELS: Record<BatchOperationId, string> = {
+  sort: "Sort",
+  dedup: "Remove Duplicates",
+  merge: "Merge Regions",
+  validate: "Validate & Fix",
+  extend: "Extend/Slop",
+  "filter-chrom": "Filter Chromosomes",
+  "filter-qual": "Filter by QUAL",
+  "filter-filter": "Filter by FILTER",
+  "filter-variant-type": "Filter Variant Type",
+  "filter-genotype": "Filter Genotype",
+  "filter-type": "Filter by Type",
+  "parse-info": "Parse INFO",
+  "parse-attributes": "Parse Attributes",
+  intersect: "Intersect/Subtract",
+  complement: "Complement",
+  "find-replace": "Find & Replace",
+  annotate: "Annotate Genes",
+  "gc-content": "GC Content",
+  liftover: "LiftOver",
+  "clean-intergenic": "Clean Intergenic",
+};
+
 interface BatchResult {
   content: string;
   fileName: string;
@@ -81,8 +105,8 @@ interface BatchState {
   assembly: Assembly | null;
   useChrPrefix: boolean;
 
-  /** Selected operation + params */
-  operation: BatchOperationConfig | null;
+  /** Pipeline: ordered list of operations to apply sequentially */
+  pipeline: BatchPipelineStep[];
 
   /** Processing state */
   isRunning: boolean;
@@ -98,7 +122,9 @@ interface BatchState {
   addFiles: (files: File[]) => Promise<void>;
   removeFile: (id: string) => void;
   setSpeciesAndAssembly: (species: SpeciesConfig, assembly: Assembly) => void;
-  setOperation: (config: BatchOperationConfig) => void;
+  addPipelineStep: (operationId: BatchOperationId, params: Record<string, unknown>) => void;
+  removePipelineStep: (stepId: string) => void;
+  reorderPipeline: (fromIdx: number, toIdx: number) => void;
   setStep: (step: "files" | "operation" | "processing" | "done") => void;
   startProcessing: () => Promise<void>;
   cancelProcessing: () => void;
@@ -106,49 +132,29 @@ interface BatchState {
   reset: () => void;
 }
 
-export const useBatchStore = create<BatchState>()((set, get) => ({
+const INITIAL_STATE = {
   isActive: false,
-  step: "files",
+  step: "files" as const,
   files: [],
   fileFormat: null,
   species: null,
   assembly: null,
   useChrPrefix: true,
-  operation: null,
+  pipeline: [],
   isRunning: false,
   progress: null,
   cancelRequested: false,
   results: [],
+};
+
+export const useBatchStore = create<BatchState>()((set, get) => ({
+  ...INITIAL_STATE,
 
   enterBatchMode: () =>
-    set({
-      isActive: true,
-      step: "files",
-      files: [],
-      fileFormat: null,
-      species: null,
-      assembly: null,
-      operation: null,
-      isRunning: false,
-      progress: null,
-      cancelRequested: false,
-      results: [],
-    }),
+    set({ ...INITIAL_STATE, isActive: true }),
 
   exitBatchMode: () =>
-    set({
-      isActive: false,
-      step: "files",
-      files: [],
-      fileFormat: null,
-      species: null,
-      assembly: null,
-      operation: null,
-      isRunning: false,
-      progress: null,
-      cancelRequested: false,
-      results: [],
-    }),
+    set(INITIAL_STATE),
 
   addFiles: async (fileList: File[]) => {
     const currentFormat = get().fileFormat;
@@ -207,14 +213,33 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
   setSpeciesAndAssembly: (species: SpeciesConfig, assembly: Assembly) =>
     set({ species, assembly }),
 
-  setOperation: (config: BatchOperationConfig) =>
-    set({ operation: config }),
+  addPipelineStep: (operationId: BatchOperationId, params: Record<string, unknown>) =>
+    set((state) => ({
+      pipeline: [
+        ...state.pipeline,
+        { id: crypto.randomUUID(), operationId, params },
+      ],
+    })),
+
+  removePipelineStep: (stepId: string) =>
+    set((state) => ({
+      pipeline: state.pipeline.filter((s) => s.id !== stepId),
+    })),
+
+  reorderPipeline: (fromIdx: number, toIdx: number) =>
+    set((state) => {
+      const pipeline = [...state.pipeline];
+      const [moved] = pipeline.splice(fromIdx, 1);
+      if (!moved) return state;
+      pipeline.splice(toIdx, 0, moved);
+      return { pipeline };
+    }),
 
   setStep: (step) => set({ step }),
 
   startProcessing: async () => {
     const state = get();
-    if (!state.operation || state.files.length === 0) return;
+    if (state.pipeline.length === 0 || state.files.length === 0) return;
 
     set({
       isRunning: true,
@@ -224,8 +249,9 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
     });
 
     const results: BatchResult[] = [];
-    const { operation, species, assembly, useChrPrefix } = state;
+    const { pipeline, species, assembly, useChrPrefix } = state;
     const speciesName = species?.ensemblName ?? "human";
+    const speciesId = species?.id;
 
     for (let i = 0; i < state.files.length; i++) {
       if (get().cancelRequested) break;
@@ -242,6 +268,9 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
           totalFiles: state.files.length,
           currentFileName: entry.fileName,
           fileProgress: { completed: 0, total: 0 },
+          currentStepIndex: 0,
+          totalSteps: pipeline.length,
+          currentStepName: OPERATION_LABELS[pipeline[0]!.operationId] ?? "",
         },
       }));
 
@@ -252,35 +281,62 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
         let columns = parsed.columns;
         let format = parsed.fileFormat;
 
-        // Apply operation
-        const result = await applyOperation(
-          operation,
-          rows,
-          columns,
-          format,
-          parsed,
-          assembly ?? "",
-          useChrPrefix,
-          speciesName,
-          (completed, total) => {
-            set((s) => ({
-              progress: s.progress
-                ? { ...s.progress, fileProgress: { completed, total } }
-                : null,
-            }));
-          },
-          () => get().cancelRequested,
-        );
+        // Apply each pipeline step sequentially
+        for (let stepIdx = 0; stepIdx < pipeline.length; stepIdx++) {
+          if (get().cancelRequested) break;
 
-        rows = result.rows;
-        columns = result.columns;
-        format = result.format;
+          const step = pipeline[stepIdx]!;
+          const stepLabel = OPERATION_LABELS[step.operationId] ?? step.operationId;
+
+          // Update progress with current step
+          set((s) => ({
+            progress: s.progress
+              ? {
+                  ...s.progress,
+                  currentStepIndex: stepIdx,
+                  totalSteps: pipeline.length,
+                  currentStepName: stepLabel,
+                  fileProgress: { completed: 0, total: 0 },
+                }
+              : null,
+          }));
+
+          const result = await applyOperation(
+            { operationId: step.operationId, params: step.params },
+            rows,
+            columns,
+            format,
+            parsed,
+            assembly ?? "",
+            useChrPrefix,
+            speciesName,
+            speciesId,
+            (completed, total) => {
+              set((s) => ({
+                progress: s.progress
+                  ? { ...s.progress, fileProgress: { completed, total } }
+                  : null,
+              }));
+            },
+            () => get().cancelRequested,
+          );
+
+          rows = result.rows;
+          columns = result.columns;
+          format = result.format;
+        }
+
+        if (get().cancelRequested) break;
 
         // Export to text
         const exportParsed = { ...parsed, fileFormat: format };
         const content = exportFileContent(exportParsed, rows, columns);
-        const suffix = OPERATION_SUFFIXES[operation.operationId] ?? "_batch";
-        const exportName = getBatchExportFileName(entry.fileName, suffix);
+
+        // Build composite suffix from all pipeline steps
+        const suffix = pipeline
+          .map((s) => OPERATION_SUFFIXES[s.operationId] ?? "")
+          .join("");
+        const exportName = getBatchExportFileName(entry.fileName, suffix || "_batch");
 
         results.push({ content, fileName: exportName });
 
@@ -317,28 +373,17 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
   cancelProcessing: () => set({ cancelRequested: true }),
 
   exportZip: async () => {
-    const { results, operation } = get();
+    const { results, pipeline } = get();
     if (results.length === 0) return;
 
-    const opId = operation?.operationId ?? "batch";
-    const zipName = `bedforge_${opId}_${results.length}files.zip`;
+    const opLabel = pipeline.length === 1
+      ? pipeline[0]!.operationId
+      : `pipeline_${pipeline.length}steps`;
+    const zipName = `bedforge_${opLabel}_${results.length}files.zip`;
     await downloadBatchZip(results, zipName);
   },
 
-  reset: () =>
-    set({
-      isActive: false,
-      step: "files",
-      files: [],
-      fileFormat: null,
-      species: null,
-      assembly: null,
-      operation: null,
-      isRunning: false,
-      progress: null,
-      cancelRequested: false,
-      results: [],
-    }),
+  reset: () => set(INITIAL_STATE),
 }));
 
 // ── Operation dispatcher ──
@@ -350,7 +395,7 @@ interface OperationResult {
 }
 
 async function applyOperation(
-  config: BatchOperationConfig,
+  config: { operationId: BatchOperationId; params: Record<string, unknown> },
   rows: GenomicRow[],
   columns: string[],
   format: FileFormat,
@@ -358,6 +403,7 @@ async function applyOperation(
   assembly: string,
   useChrPrefix: boolean,
   speciesName: string,
+  speciesId: string | undefined,
   onProgress: (completed: number, total: number) => void,
   isCancelled: () => boolean,
 ): Promise<OperationResult> {
@@ -365,7 +411,7 @@ async function applyOperation(
 
   switch (operationId) {
     case "sort":
-      return { rows: sortRows(rows, format), columns, format };
+      return { rows: sortRows(rows, format, speciesId), columns, format };
 
     case "dedup":
       return { rows: removeDuplicateRows(rows, format), columns, format };

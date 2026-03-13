@@ -2,7 +2,8 @@ import { useState } from "react";
 
 import { useBatchStore } from "../../stores/useBatchStore";
 import { isBedFamily } from "../../utils/format-helpers";
-import type { BatchOperationId } from "../../types/batch";
+import type { BatchOperationId, BatchPipelineStep } from "../../types/batch";
+import type { FileFormat } from "../../types/genomic";
 
 interface OperationDef {
   id: BatchOperationId;
@@ -38,90 +39,255 @@ const OPERATIONS: OperationDef[] = [
   { id: "clean-intergenic", label: "Clean Intergenic", description: "Remove non-genic", formats: ["bed", "vcf", "gff3"], isApi: true, hasParams: false },
 ];
 
-export function BatchOperationPicker(): React.ReactElement {
+/** Given a format, return which operations are valid */
+function getAvailableOpsForFormat(
+  format: FileFormat | null,
+  species: { assemblies: Array<{ name: string; label: string }> } | null,
+): OperationDef[] {
+  if (!format) return [];
+  const formatKey = isBedFamily(format) ? "bed" : format;
+  return OPERATIONS.filter((op) => {
+    if (!op.formats.includes(formatKey as "bed" | "vcf" | "gff3")) return false;
+    if (op.id === "liftover" && species && species.assemblies.length < 2) return false;
+    return true;
+  });
+}
+
+/** Determine what format an operation produces given its input format */
+function getOutputFormat(operationId: BatchOperationId, inputFormat: FileFormat): FileFormat {
+  if (operationId === "merge" || operationId === "complement") return "bed3";
+  return inputFormat;
+}
+
+/** Get the effective format at a given pipeline position */
+function getFormatAtStep(pipeline: BatchPipelineStep[], stepIndex: number, baseFormat: FileFormat): FileFormat {
+  let format = baseFormat;
+  for (let i = 0; i < stepIndex; i++) {
+    format = getOutputFormat(pipeline[i]!.operationId, format);
+  }
+  return format;
+}
+
+/** Get a short summary of step params */
+function getParamSummary(operationId: BatchOperationId, params: Record<string, unknown>): string {
+  switch (operationId) {
+    case "extend": {
+      const up = (params.upstream as number) ?? 0;
+      const down = (params.downstream as number) ?? 0;
+      return `±${up === down ? up : `${up}/${down}`}bp`;
+    }
+    case "filter-qual":
+      return `Q≥${(params.minQual as number) ?? 30}`;
+    case "filter-filter":
+      return (params.keepValuesStr as string) ?? "PASS";
+    case "filter-variant-type":
+    case "filter-type":
+      return (params.keepTypesStr as string) ?? "";
+    case "filter-chrom":
+      return (params.keepChromsStr as string) ?? "";
+    case "find-replace":
+      return `"${(params.search as string) ?? ""}" → "${(params.replace as string) ?? ""}"`;
+    case "liftover":
+      return (params.targetAssembly as string) ?? "";
+    default:
+      return "";
+  }
+}
+
+const OP_LABEL_MAP: Record<string, string> = Object.fromEntries(
+  OPERATIONS.map((op) => [op.id, op.label]),
+);
+
+export function BatchPipelineBuilder(): React.ReactElement {
   const fileFormat = useBatchStore((s) => s.fileFormat);
   const species = useBatchStore((s) => s.species);
-  const setOperation = useBatchStore((s) => s.setOperation);
+  const pipeline = useBatchStore((s) => s.pipeline);
+  const addPipelineStep = useBatchStore((s) => s.addPipelineStep);
+  const removePipelineStep = useBatchStore((s) => s.removePipelineStep);
+  const reorderPipeline = useBatchStore((s) => s.reorderPipeline);
   const startProcessing = useBatchStore((s) => s.startProcessing);
   const setStep = useBatchStore((s) => s.setStep);
   const filesCount = useBatchStore((s) => s.files.length);
 
-  const [selectedOp, setSelectedOp] = useState<BatchOperationId | null>(null);
-  const [params, setParams] = useState<Record<string, unknown>>({});
+  const [addingOp, setAddingOp] = useState<BatchOperationId | null>(null);
+  const [addingParams, setAddingParams] = useState<Record<string, unknown>>({});
 
-  const formatKey = fileFormat
-    ? isBedFamily(fileFormat) ? "bed" : fileFormat
+  // Determine the current format at the end of the pipeline
+  const currentFormat = fileFormat
+    ? getFormatAtStep(pipeline, pipeline.length, fileFormat)
     : null;
 
-  const availableOps = OPERATIONS.filter((op) => {
-    if (!formatKey) return false;
-    if (!op.formats.includes(formatKey as "bed" | "vcf" | "gff3")) return false;
-    // LiftOver only if species has 2+ assemblies
-    if (op.id === "liftover" && species && species.assemblies.length < 2) return false;
-    return true;
-  });
+  const availableOps = getAvailableOpsForFormat(currentFormat, species);
+  const addingDef = availableOps.find((op) => op.id === addingOp);
 
-  const selectedDef = availableOps.find((op) => op.id === selectedOp);
+  function handleAddStep(): void {
+    if (!addingOp) return;
+    addPipelineStep(addingOp, addingParams);
+    setAddingOp(null);
+    setAddingParams({});
+  }
+
+  function handleMoveUp(idx: number): void {
+    if (idx <= 0) return;
+    reorderPipeline(idx, idx - 1);
+  }
+
+  function handleMoveDown(idx: number): void {
+    if (idx >= pipeline.length - 1) return;
+    reorderPipeline(idx, idx + 1);
+  }
 
   function handleStart(): void {
-    if (!selectedOp) return;
-    setOperation({ operationId: selectedOp, params });
+    if (pipeline.length === 0) return;
     startProcessing();
   }
 
   return (
     <div className="relative z-10 flex h-full flex-col items-center justify-center">
       <div className="mb-6 text-center">
-        <h2 className="text-lg font-semibold text-text-primary">Choose Operation</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Build Pipeline</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Will be applied to all {filesCount} file{filesCount !== 1 ? "s" : ""}
+          Chain operations for all {filesCount} file{filesCount !== 1 ? "s" : ""}
         </p>
       </div>
 
-      <div className="w-[640px]">
-        {/* Operation grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {availableOps.map((op) => (
-            <button
-              key={op.id}
-              onClick={() => {
-                setSelectedOp(op.id);
-                setParams({});
-              }}
-              className={`group rounded-xl border px-4 py-3 text-left transition-all ${
-                selectedOp === op.id
-                  ? "border-cyan-glow/40 bg-cyan-glow/[0.06]"
-                  : "border-elevated/60 bg-surface/30 hover:border-elevated hover:bg-surface/60"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className={`text-[13px] font-medium transition-colors ${
-                  selectedOp === op.id ? "text-cyan-glow" : "text-text-primary group-hover:text-cyan-glow"
-                }`}>
-                  {op.label}
-                </span>
-                {op.isApi && (
-                  <span className="rounded-full border border-electric/20 bg-electric/5 px-1.5 py-0.5 text-[8px] font-medium uppercase text-electric">
-                    API
+      <div className="w-[660px]">
+        {/* Pipeline step list */}
+        {pipeline.length > 0 && (
+          <div className="glass mb-4 rounded-xl">
+            {pipeline.map((step, idx) => {
+              const summary = getParamSummary(step.operationId, step.params);
+              return (
+                <div
+                  key={step.id}
+                  className="flex items-center gap-3 border-b border-elevated/30 px-4 py-2.5 last:border-b-0"
+                >
+                  {/* Step number */}
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-glow/10 font-mono text-[11px] font-semibold text-cyan-glow">
+                    {idx + 1}
                   </span>
-                )}
-              </div>
-              <div className="mt-0.5 text-[11px] text-text-muted">{op.description}</div>
-            </button>
-          ))}
-        </div>
 
-        {/* Parameter configuration for selected operation */}
-        {selectedDef?.hasParams && (
-          <div className="glass mt-4 rounded-xl p-4">
-            <OperationParams
-              operationId={selectedOp!}
-              params={params}
-              onChange={setParams}
-              species={species}
-            />
+                  {/* Label + params */}
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[13px] font-medium text-text-primary">
+                      {OP_LABEL_MAP[step.operationId] ?? step.operationId}
+                    </span>
+                    {summary && (
+                      <span className="ml-2 font-mono text-[10px] text-text-muted">
+                        {summary}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Reorder + remove buttons */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleMoveUp(idx)}
+                      disabled={idx === 0}
+                      className="rounded p-1 text-text-ghost transition-colors hover:bg-raised hover:text-text-secondary disabled:opacity-20"
+                      title="Move up"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 15l-6-6-6 6" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleMoveDown(idx)}
+                      disabled={idx === pipeline.length - 1}
+                      className="rounded p-1 text-text-ghost transition-colors hover:bg-raised hover:text-text-secondary disabled:opacity-20"
+                      title="Move down"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => removePipelineStep(step.id)}
+                      className="rounded p-1 text-text-ghost transition-colors hover:bg-nt-t/10 hover:text-nt-t"
+                      title="Remove step"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
+
+        {/* Pipeline connector */}
+        {pipeline.length > 0 && (
+          <div className="flex justify-center py-1">
+            <svg width="14" height="20" viewBox="0 0 14 20" className="text-cyan-glow/40">
+              <path d="M7 0v16M3 12l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        )}
+
+        {/* Add step section */}
+        <div className="rounded-xl border border-dashed border-elevated/60 p-4">
+          <div className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-text-muted">
+            {pipeline.length === 0 ? "Add First Step" : "Add Next Step"}
+          </div>
+
+          {/* Operation grid */}
+          <div className="grid grid-cols-3 gap-2">
+            {availableOps.map((op) => (
+              <button
+                key={op.id}
+                onClick={() => {
+                  setAddingOp(op.id);
+                  setAddingParams({});
+                }}
+                className={`group rounded-xl border px-3 py-2.5 text-left transition-all ${
+                  addingOp === op.id
+                    ? "border-cyan-glow/40 bg-cyan-glow/[0.06]"
+                    : "border-elevated/60 bg-surface/30 hover:border-elevated hover:bg-surface/60"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`text-[12px] font-medium transition-colors ${
+                    addingOp === op.id ? "text-cyan-glow" : "text-text-primary group-hover:text-cyan-glow"
+                  }`}>
+                    {op.label}
+                  </span>
+                  {op.isApi && (
+                    <span className="rounded-full border border-electric/20 bg-electric/5 px-1.5 py-0.5 text-[8px] font-medium uppercase text-electric">
+                      API
+                    </span>
+                  )}
+                </div>
+                <div className="mt-0.5 text-[10px] text-text-muted">{op.description}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Parameter configuration for selected operation */}
+          {addingDef?.hasParams && (
+            <div className="glass mt-3 rounded-xl p-4">
+              <OperationParams
+                operationId={addingOp!}
+                params={addingParams}
+                onChange={setAddingParams}
+                species={species}
+              />
+            </div>
+          )}
+
+          {/* Add to Pipeline button */}
+          {addingOp && (
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={handleAddStep}
+                className="rounded-lg border border-cyan-glow/30 bg-cyan-glow/10 px-4 py-1.5 text-[13px] font-medium text-cyan-glow transition-colors hover:bg-cyan-glow/20"
+              >
+                + Add to Pipeline
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Action buttons */}
         <div className="mt-6 flex items-center justify-between">
@@ -133,10 +299,10 @@ export function BatchOperationPicker(): React.ReactElement {
           </button>
           <button
             onClick={handleStart}
-            disabled={!selectedOp}
+            disabled={pipeline.length === 0}
             className="rounded-lg bg-cyan-glow px-6 py-2 text-sm font-medium text-void transition-colors hover:bg-cyan-glow/90 disabled:opacity-40"
           >
-            Apply to All ({filesCount})
+            Run Pipeline ({pipeline.length} step{pipeline.length !== 1 ? "s" : ""}) on {filesCount} file{filesCount !== 1 ? "s" : ""}
           </button>
         </div>
       </div>

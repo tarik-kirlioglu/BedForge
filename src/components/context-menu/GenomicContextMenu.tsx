@@ -139,7 +139,7 @@ export function GenomicContextMenu(): React.ReactElement | null {
 
   function handleSort(): void {
     close();
-    runSort(fileFormat!);
+    runSort(fileFormat!, species?.id);
   }
 
   function handleRemoveDuplicates(): void {

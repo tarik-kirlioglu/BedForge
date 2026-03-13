@@ -7,6 +7,9 @@ import { getChromColumn } from "../../utils/format-helpers";
 export function ChromDistribution(): React.ReactElement {
   const rows = useFileStore((s) => s.rows);
   const fileFormat = useFileStore((s) => s.fileFormat);
+  const speciesId = useFileStore((s) => s.species?.id);
+
+  const useRoman = speciesId === "s_cerevisiae";
 
   const distribution = useMemo(() => {
     if (!fileFormat) return [];
@@ -20,8 +23,8 @@ export function ChromDistribution(): React.ReactElement {
 
     return Array.from(counts.entries())
       .map(([chrom, count]) => ({ chrom, count }))
-      .sort((a, b) => chromRank(a.chrom) - chromRank(b.chrom));
-  }, [rows, fileFormat]);
+      .sort((a, b) => chromRank(a.chrom, useRoman) - chromRank(b.chrom, useRoman));
+  }, [rows, fileFormat, useRoman]);
 
   if (distribution.length === 0) return <></>;
 
