@@ -11,6 +11,7 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 
 - **Drag & drop** a BED, VCF, or GFF3 file, pick your species and assembly, and start editing.
 - **Right-click** any row for context-aware operations (different menus for BED, VCF, and GFF3).
+- **Batch pipeline** — load multiple files, chain operations (Sort → Extend → Dedup), process all, export as ZIP.
 - **Undo everything** with Ctrl+Z — every operation is reversible (up to 20 steps).
 - **Export** your cleaned file and move on.
 
@@ -26,7 +27,7 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 | **Annotate Genes** | Fetch gene names from Ensembl overlap endpoint; auto-upgrades BED3 to BED4 | Ensembl API |
 | **GC Content** | Calculate GC% for each region; adds `gc_content` column | Ensembl API |
 | **Clean Intergenic** | Remove rows with no gene overlap | Ensembl API |
-| **Sort** | Natural chromosome order (1-22, X, Y, M) + start + end | Client |
+| **Sort** | Natural chromosome order (1-22, X, Y, M) + start + end. Species-aware: S. cerevisiae uses Roman numeral ordering | Client |
 | **Remove Duplicates** | Deduplicate by chrom:start:end (keeps first) | Client |
 | **Merge Overlapping** | Merge overlapping/adjacent regions (like `bedtools merge`) | Client |
 | **Extend / Slop** | Extend regions upstream/downstream (strand-aware) with presets | Client |
@@ -56,7 +57,7 @@ Working with BED, VCF, and GFF3 files usually means switching between command-li
 
 | Operation | Description |
 |-----------|-------------|
-| **Filter by Chromosome** | Filter rows by chromosome with checkbox list, natural ordering, and quick actions (Autosomes, chr1 Only) |
+| **Filter by Chromosome** | Filter rows by chromosome with checkbox list, species-aware ordering (chrX/Y/M after chr22; S. cerevisiae uses Roman numerals), and quick actions (Autosomes, chr1 Only) |
 | **Intersect / Subtract** | Compare with a second file (BED/VCF/GFF3). Two-axis controls: Action (keep or remove matching rows) × Match Type (any overlap or exact chrom+start+end). Binary search O(N log M) |
 | **LiftOver** | Convert coordinates between assemblies (species with 2+ assemblies) |
 | **Clean Intergenic** | Remove rows with no gene overlap |
@@ -77,6 +78,18 @@ Toggle from the toolbar to see:
 - **Column stats** : count, min, max, median, mean, std dev (numeric) or unique values (categorical)
 - **Chromosome distribution** : horizontal bar chart with natural ordering
 - **Region size distribution** : log-scale histogram (BED and GFF3)
+
+### Batch Pipeline
+
+Process multiple files through a multi-step operation chain:
+
+1. **Upload** — Drag & drop multiple files (same format enforced: all BED, all VCF, or all GFF3)
+2. **Select species & assembly** — Shared across all files
+3. **Build pipeline** — Chain operations in sequence (e.g. Sort → Extend ±200bp → Dedup). Each step's output feeds the next. Add, reorder, or remove steps. Format-aware filtering: operations that change format (Merge → BED3) update available ops for subsequent steps
+4. **Process** — All files processed sequentially through the full pipeline with step-level progress
+5. **Export** — Download results as a ZIP archive with composite filename suffixes
+
+All client-side and API operations are available in the pipeline.
 
 ---
 
