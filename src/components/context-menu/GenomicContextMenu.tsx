@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { create } from "zustand";
 
 import { useFileStore } from "../../stores/useFileStore";
 import { useSelectionStore } from "../../stores/useSelectionStore";
 import { useOperationStore } from "../../stores/useOperationStore";
+import { useContextMenuStore } from "../../stores/useContextMenuStore";
 import { runLiftOver } from "../../operations/liftover-operation";
 import { runCleanIntergenic } from "../../operations/clean-intergenic";
 import { runGCContent } from "../../operations/gc-content";
@@ -28,22 +28,6 @@ import { ChromFilterDialog } from "../operations/ChromFilterDialog";
 import { AttributeParserDialog } from "../operations/AttributeParserDialog";
 import { openInEnsembl } from "../../operations/ensembl-link";
 import { isBedFamily } from "../../utils/format-helpers";
-
-interface ContextMenuState {
-  visible: boolean;
-  x: number;
-  y: number;
-  open: (x: number, y: number) => void;
-  close: () => void;
-}
-
-export const useContextMenuStore = create<ContextMenuState>()((set) => ({
-  visible: false,
-  x: 0,
-  y: 0,
-  open: (x, y) => set({ visible: true, x, y }),
-  close: () => set({ visible: false }),
-}));
 
 export function GenomicContextMenu(): React.ReactElement | null {
   const { visible, x, y, close } = useContextMenuStore();

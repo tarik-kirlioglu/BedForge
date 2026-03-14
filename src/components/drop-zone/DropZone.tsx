@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 
 import { useFileStore } from "../../stores/useFileStore";
-import { useBatchStore } from "../../stores/useBatchStore";
 import { parseFileFromDisk, parseContent } from "../../parsers/parse-file";
 import { isGzipped, formatBytes, SOFT_SIZE_LIMIT } from "../../utils/decompress";
 import { SPECIES_LIST } from "../../types/genomic";
@@ -386,7 +385,11 @@ export function DropZone(): React.ReactElement {
 
         {/* ── Batch Mode ── */}
         <button
-          onClick={() => useBatchStore.getState().enterBatchMode()}
+          onClick={() => {
+            import("../../stores/useBatchStore").then((m) => {
+              m.useBatchStore.getState().enterBatchMode();
+            });
+          }}
           className="animate-fade-in-up mt-6 flex items-center gap-2.5 rounded-xl border border-elevated/60 bg-surface/30 px-5 py-3 transition-all hover:border-cyan-glow/30 hover:bg-surface/60"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-cyan-glow">

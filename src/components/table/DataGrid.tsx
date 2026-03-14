@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useFileStore } from "../../stores/useFileStore";
 import { useSelectionStore } from "../../stores/useSelectionStore";
 import { useSearchStore } from "../../stores/useSearchStore";
-import { useContextMenuStore } from "../context-menu/GenomicContextMenu";
+import { useContextMenuStore } from "../../stores/useContextMenuStore";
 import { EditableCell } from "./EditableCell";
 import type { GenomicRow } from "../../types/genomic";
 

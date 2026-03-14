@@ -3,35 +3,15 @@ import { create } from "zustand";
 import { parseFileFromDisk } from "../parsers/parse-file";
 import { exportFileContent, getBatchExportFileName, downloadBatchZip } from "../exporters/batch-export";
 import { isBedFamily } from "../utils/format-helpers";
+import { dispatchOperation } from "../operations/batch-dispatcher";
 
-// Pure operation imports — client-side
-import { sortRows } from "../operations/sort-rows";
-import { removeDuplicateRows } from "../operations/remove-duplicates";
-import { mergeRegionRows } from "../operations/merge-regions";
-import { extendRegionRows } from "../operations/extend-regions";
-import { validateAndFixRows } from "../operations/validate-coordinates";
-import { computeComplement } from "../operations/complement";
-import { filterByChromValues } from "../operations/chrom-filter";
-import { filterByFilterValues, filterByQual } from "../operations/filter-vcf";
-import { filterByVariantTypes } from "../operations/variant-type-filter";
-import { filterByGenotypes } from "../operations/genotype-filter";
-import { filterByTypeValues } from "../operations/type-filter";
-import { parseInfoFields } from "../operations/info-parser";
-import { parseAttributeFields } from "../operations/gff3-attribute-parser";
-import { intersectRows } from "../operations/intersect";
-import { findAndReplace } from "../operations/find-replace";
-
-// Pure operation imports — API-based
-import { batchAnnotateGenes, batchGCContent, batchLiftOver, batchCleanIntergenic } from "../operations/batch-api-runners";
-
-import type { Assembly, FileFormat, GenomicRow, SpeciesConfig } from "../types/genomic";
+import type { Assembly, FileFormat, SpeciesConfig } from "../types/genomic";
 import type {
   BatchFileEntry,
   BatchFileStatus,
   BatchOperationId,
   BatchPipelineStep,
   BatchProgress,
-  ParsedFile,
 } from "../types/batch";
 
 /** Map from operation ID to a human-readable suffix for export filenames */
@@ -301,7 +281,7 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
               : null,
           }));
 
-          const result = await applyOperation(
+          const result = await dispatchOperation(
             { operationId: step.operationId, params: step.params },
             rows,
             columns,
@@ -386,200 +366,3 @@ export const useBatchStore = create<BatchState>()((set, get) => ({
   reset: () => set(INITIAL_STATE),
 }));
 
-// ── Operation dispatcher ──
-
-interface OperationResult {
-  rows: GenomicRow[];
-  columns: string[];
-  format: FileFormat;
-}
-
-async function applyOperation(
-  config: { operationId: BatchOperationId; params: Record<string, unknown> },
-  rows: GenomicRow[],
-  columns: string[],
-  format: FileFormat,
-  _parsed: ParsedFile,
-  assembly: string,
-  useChrPrefix: boolean,
-  speciesName: string,
-  speciesId: string | undefined,
-  onProgress: (completed: number, total: number) => void,
-  isCancelled: () => boolean,
-): Promise<OperationResult> {
-  const { operationId, params } = config;
-
-  switch (operationId) {
-    case "sort":
-      return { rows: sortRows(rows, format, speciesId), columns, format };
-
-    case "dedup":
-      return { rows: removeDuplicateRows(rows, format), columns, format };
-
-    case "merge":
-      return {
-        rows: mergeRegionRows(rows),
-        columns: ["chrom", "chromStart", "chromEnd"],
-        format: "bed3",
-      };
-
-    case "validate":
-      return { rows: validateAndFixRows(rows), columns, format };
-
-    case "extend": {
-      const upstream = (params.upstream as number) ?? 0;
-      const downstream = (params.downstream as number) ?? 0;
-      return { rows: extendRegionRows(rows, upstream, downstream, format), columns, format };
-    }
-
-    case "filter-chrom": {
-      const keepChroms = params.keepChroms as Set<string>;
-      return { rows: filterByChromValues(rows, keepChroms, format), columns, format };
-    }
-
-    case "filter-qual": {
-      const minQual = (params.minQual as number) ?? 0;
-      return { rows: filterByQual(rows, minQual), columns, format };
-    }
-
-    case "filter-filter": {
-      const keepValues = params.keepValues as Set<string>;
-      return { rows: filterByFilterValues(rows, keepValues), columns, format };
-    }
-
-    case "filter-variant-type": {
-      const keepTypes = params.keepTypes as Set<string>;
-      return { rows: filterByVariantTypes(rows, keepTypes as never), columns, format };
-    }
-
-    case "filter-genotype": {
-      const sampleName = params.sampleName as string;
-      const keepGTs = params.keepGTs as Set<string>;
-      return { rows: filterByGenotypes(rows, sampleName, keepGTs), columns, format };
-    }
-
-    case "filter-type": {
-      const keepTypes = params.keepTypes as Set<string>;
-      return { rows: filterByTypeValues(rows, keepTypes), columns, format };
-    }
-
-    case "parse-info": {
-      const keys = params.keys as string[] | undefined;
-      // If no keys specified, auto-scan all keys
-      const allKeys = keys ?? extractAllInfoKeys(rows);
-      const result = parseInfoFields(rows, allKeys);
-      return {
-        rows: result.rows,
-        columns: [...columns, ...result.newColumns],
-        format,
-      };
-    }
-
-    case "parse-attributes": {
-      const keys = params.keys as string[] | undefined;
-      const allKeys = keys ?? extractAllAttributeKeys(rows);
-      const result = parseAttributeFields(rows, allKeys);
-      return {
-        rows: result.rows,
-        columns: [...columns, ...result.newColumns],
-        format,
-      };
-    }
-
-    case "intersect": {
-      const targetRows = params.targetRows as GenomicRow[];
-      const targetFormat = params.targetFormat as FileFormat;
-      const action = params.action as "keep" | "remove";
-      const matchType = params.matchType as "overlap" | "exact";
-      return {
-        rows: intersectRows(rows, format, targetRows, targetFormat, action, matchType),
-        columns,
-        format,
-      };
-    }
-
-    case "complement": {
-      const chromSizes = params.chromSizes as Map<string, number>;
-      return {
-        rows: computeComplement(rows, chromSizes),
-        columns: ["chrom", "chromStart", "chromEnd"],
-        format: "bed3",
-      };
-    }
-
-    case "find-replace": {
-      const search = params.search as string;
-      const replace = params.replace as string;
-      const caseSensitive = (params.caseSensitive as boolean) ?? false;
-      return {
-        rows: findAndReplace(rows, columns, { search, replace, caseSensitive }),
-        columns,
-        format,
-      };
-    }
-
-    // API operations
-    case "annotate": {
-      const result = await batchAnnotateGenes(
-        rows, columns, format, speciesName, onProgress, isCancelled,
-      );
-      return { rows: result.rows, columns: result.columns, format: result.format };
-    }
-
-    case "gc-content": {
-      const result = await batchGCContent(
-        rows, columns, assembly, format, speciesName, onProgress, isCancelled,
-      );
-      return { rows: result.rows, columns: result.columns, format };
-    }
-
-    case "liftover": {
-      const targetAssembly = params.targetAssembly as string;
-      const result = await batchLiftOver(
-        rows, format, assembly, targetAssembly, useChrPrefix, speciesName, onProgress, isCancelled,
-      );
-      return { rows: result, columns, format };
-    }
-
-    case "clean-intergenic": {
-      const result = await batchCleanIntergenic(
-        rows, assembly, format, speciesName, onProgress, isCancelled,
-      );
-      return { rows: result, columns, format };
-    }
-
-    default:
-      return { rows, columns, format };
-  }
-}
-
-/** Extract all INFO field keys from rows for auto-scan */
-function extractAllInfoKeys(rows: GenomicRow[]): string[] {
-  const keys = new Set<string>();
-  for (const row of rows) {
-    const info = String(row.INFO ?? ".");
-    if (info === "." || info === "") continue;
-    for (const pair of info.split(";")) {
-      const eqIdx = pair.indexOf("=");
-      const key = eqIdx === -1 ? pair.trim() : pair.slice(0, eqIdx).trim();
-      if (key) keys.add(key);
-    }
-  }
-  return [...keys];
-}
-
-/** Extract all attribute keys from GFF3 rows for auto-scan */
-function extractAllAttributeKeys(rows: GenomicRow[]): string[] {
-  const keys = new Set<string>();
-  for (const row of rows) {
-    const attrs = String(row.attributes ?? "");
-    if (!attrs || attrs === ".") continue;
-    for (const pair of attrs.split(";")) {
-      const eqIdx = pair.indexOf("=");
-      if (eqIdx === -1) continue;
-      const key = pair.slice(0, eqIdx).trim();
-      if (key) keys.add(key);
-    }
-  }
-  return [...keys];
-}

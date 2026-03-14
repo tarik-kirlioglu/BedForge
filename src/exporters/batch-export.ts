@@ -1,5 +1,3 @@
-import JSZip from "jszip";
-
 import { exportBed } from "./bed-exporter";
 import { exportVcf } from "./vcf-exporter";
 import { exportGff3 } from "./gff3-exporter";
@@ -59,6 +57,7 @@ export async function downloadBatchZip(
   results: Array<{ content: string; fileName: string }>,
   zipName: string,
 ): Promise<void> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
 
   for (const { content, fileName } of results) {
